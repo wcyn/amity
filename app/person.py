@@ -1,8 +1,8 @@
 class Person(object):
-    def __init__(self):
-        self.person_id = None
-        self.name = None
-        self.allocated_office_space = None
+    def __init__(self, person_id=None, name=None, allocated_office_space=None):
+        self.id = id
+        self.name = name
+        self.allocated_office_space = allocated_office_space
         self.num_of_people = None
 
     def get_name(self):
@@ -33,5 +33,8 @@ class Fellow(Person):
         pass
 
     def get_num_of_fellows(self):
+        pass
+
+    def set_allocated_living_space(self, room=None):
         pass
 
