@@ -26,12 +26,10 @@ class TestAmity(unittest.TestCase):
         del self.living_space 
 
     def test_rooms_attr_is_list(self):
-        print("FAiling please..")
         self.assertIsInstance(self.amity.rooms, list)
 
     def test_rooms_attr_is_list_of_room_objs(self):
         if self.amity.rooms:
-            print("Something")
             # To Avoid NoneType Error
             for i in self.amity.rooms:
                 self.assertIsInstance(i, Room)
@@ -40,7 +38,6 @@ class TestAmity(unittest.TestCase):
 
 
     def test_people_attr_is_list(self):
-        print("FAiling please..")
         self.assertIsInstance(self.amity.people, list)
 
     def test_people_attr_is_list_of_person_objs(self):
@@ -61,9 +58,34 @@ class TestAmity(unittest.TestCase):
             for i in rooms:
                 self.assertIsInstance(i, Room) 
 
-    def test_acreate_room_raises_value_error_for_non_string(self):
+    def test_create_room_raises_value_error_for_non_string(self):
         with self.assertRaises(ValueError):
             self.amity.create_room([66.4, 34])
+
+    def test_add_person_returns_person_object(self):
+        person = self.amity.add_person("jane", "f", "y")
+        self.assertIsInstance(person, Person)
+
+    def test_add_person_raises_value_error_for_non_str_name(self):
+        with self.assertRaises(ValueError):
+            self.amity.add_person(23, "f", "y")
+
+    def test_add_person_raises_value_error_for_non_str_type(self):
+        with self.assertRaises(ValueError):
+            self.amity.add_person("jane", 42, "y")
+
+    def test_add_person_raises_value_error_for_non_str_accom(self):
+        with self.assertRaises(ValueError):
+            self.amity.add_person("jane", "s", 42)
+
+    def test_add_person_accepts_valid_types(self):
+        self.assertEqual(self.amity.add_person("jane", "random", "y"),
+                              "Invalid person type")
+
+    def test_add_person_accepts_valid_accommodation_opt(self):
+        self.assertEqual(self.amity.add_person("jane", "f", "maybe"),
+                              "Accomodation choice can only be y or n")
+
 
 
 if __name__ == '__main__':
