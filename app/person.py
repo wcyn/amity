@@ -21,18 +21,15 @@ class Person(object):
         self.id = id
 
 class Staff(Person):
-    def __init__(self, name):
-        super(Person, self).__init__(name, None)
-        self.num_of_staff_members = None
+        num_of_staff_members = None
 
     def get_num_of_staff_members(self):
         pass
 
 class Fellow(Person):
-    def __init__(self, name):
-        super(Person, self).__init__(name, None)
-        self.num_of_fellows = None
-        self.allocated_living_space = None
+    
+    num_of_fellows = None
+    allocated_living_space = None
 
     def get_allocated_living_space(self):
         pass
