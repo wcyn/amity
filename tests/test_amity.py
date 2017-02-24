@@ -7,10 +7,10 @@ class TestAmity(unittest.TestCase):
 
     def setUp(self):
         self.amity = Amity()
-        self.person = Person()
+        # self.person = Person()
         self.staff = Staff("jane")
         self.fellow = Fellow("jake", "ruby")
-        self.room = Room()
+        # self.room = Room()
         self.office = Office("hogwarts")
         self.living_space = LivingSpace("python")
 

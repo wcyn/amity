@@ -17,7 +17,8 @@ class Room(object):
         pass
 
 class Office(Room):
-    def __init__(self):
+    def __init__(self, name):
+        super(Room, self).__init__(name)
         self.max_occupants = 6
         self.num_of_office_spaces = None
 
@@ -25,7 +26,8 @@ class Office(Room):
         pass
 
 class LivingSpace(Room):
-    def __init__(self):
+    def __init__(self, name):
+        super(Room, self).__init__(name)
         self.max_occupants = 4
         self.num_of_living_spaces = None
 
