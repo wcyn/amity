@@ -31,6 +31,36 @@ class TestAmity(unittest.TestCase):
         amity.fellows = None
         amity.staff = None
 
+    # Born Again Tests
+    def create_room_adds_rooms_to_amity_room_list(self):
+        create_room(self.rooms)
+        room_objs = []
+        for i in self.rooms:
+            room_objs.append[Office(i)]
+        self.assertEqual(amity.living_spaces, [living_space] + room_objs)
+
+    def create_room_adds_living_rooms_when_suffixed_with_lv(self):
+        create_room(["bee-lv"])
+        bee = LivingSpace("bee")
+        self.assertEqual(amity.living_spaces, [living_space, bee])
+
+    def test_create_room_raises_type_error_with_non_string_room_names(self):
+        with self.assertRaises(TypeError):
+            rooms = [12.3, "gates", [45]]
+            create_room(rooms)
+
+    def test_create_room_returns_none_when_no_room_provided(self):
+        self.assertEqual(None, create_room([]))
+    
+    def test_create_room_filters_out_duplicate_room_names(self):
+        gates = LivingSpace("gates")
+        create_room(["gates", "gates"])
+        self.assertEqual(amity.living_spaces, [living_spaces, gates])
+
+    def test_create_room_does_not_add_duplicate_room_name(self):
+        create_room(["python"])
+        self.assertEqual(amity.living_spaces, [living_space])
+
     # Attributes Testing
 
     def test_rooms_attr_is_list(self):
