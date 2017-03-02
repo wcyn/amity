@@ -100,6 +100,10 @@ class TestAmity(unittest.TestCase):
         self.assertEqual("Invalid person type",
                          self.amity.add_person("Jane", "manager"))    
 
+    def test_add_person_returns_error_message_on_wrong_accommodation_option(self):
+        self.assertEqual("Invalid option %s" %"please",
+                         self.amity.add_person("Jane", "manager", "please"))
+
     def test_add_person_staff_returns_staff_object(self):
         self.assertIsInstance(self.amity.add_person("kate", "s"), Staff)
 
@@ -146,7 +150,7 @@ class TestAmity(unittest.TestCase):
         self.assertEqual("A room already exists with this name",
                          self.amity.create_room(["krypton"]))
 
-    #this tests for impossible case-not testable
+    # this tests for impossible case-not testable
     def test_new_person_obj_rejects_duplicate_id(self):
         self.person.id = 1
         person2 = Person("kelly", "hogwarts")
