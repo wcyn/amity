@@ -8,29 +8,28 @@ class Room(object):
             raise TypeError("The Room class may not be instantiated")
         return super(Room, cls).__new__(cls)
         
-    def get_name(self):
-        pass
+    @property
+    def name(self):
+        return self.__name
+
+    @name.setter
+    def name(self, name):
+        self.__name = name
+
+    @property
+    def num_of_occupants(self):
+        return self.__num_of_occupants
+
+    @num_of_occupants.setter
+    def num_of_occupants(self, num_of_occupants):
+            self.__num_of_occupants = num_of_occupants
 
     def get_max_occupants(self):
         return self.max_occupants
 
-    def get_num_of_occupants(self):
-        pass
-
-
 class Office(Room):
-    def __init__(self, name):
-        super(Office, self).__init__(name)
-        self.max_occupants = 6
-
-    def get_num_of_office_spaces(self):
-        pass
+    max_occupants = 6
 
 class LivingSpace(Room):
-    def __init__(self, name):
-        super(Office, self).__init__(name)
-        self.max_occupants = 4
-
-    def get_num_of_living_spaces(self):
-        pass
+    max_occupants = 4   
 

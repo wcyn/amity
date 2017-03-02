@@ -12,6 +12,9 @@ class Amity(object):
     def add_person(self, person_name, type, wants_accomodation="n"):
         pass
 
+    def allocate_room_to_person(room, person):
+        pass
+
     def reallocate_person(self, person_id, new_room_name):
         pass
 
