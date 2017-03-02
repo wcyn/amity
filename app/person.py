@@ -1,9 +1,8 @@
 class Person(object):
     def __init__(self, name, **kwargs):
-        self.id = id
-        self.name = name
         # If not defined, id is None
         self.id = kwargs.pop('id', None)
+        self.name = name
         # If not defined, allocated_office_space is None
         self.allocated_office_space = kwargs.pop('allocated_office_space',
                                                  None)
@@ -13,32 +12,35 @@ class Person(object):
             raise TypeError("The Person class may not be instantiated")
         return super(Person, cls).__new__(cls)
 
-    def get_id(self):
-        pass
+    @property
+    def id(self):
+        return self.__id
 
-    def get_name(self):
-        pass
+    @id.setter
+    def id(self, id):
+        self.__id = id
 
-    def get_person_id(self):
-        pass
+    @property
+    def name(self):
+        return self.__name
 
-    def get_allocated_office_space(self):
-        pass
+    @name.setter
+    def name(self, name):
+        self.__name = name
 
-    def set_id(self, id):
-        pass
+    @property
+    def allocated_office_space(self):
+        return self.__allocated_office_space
 
-    def set_name(self):
-        pass
-
-    def set_allocated_office_space(self, allocated_office_space):
-        pass
-
+    @allocated_office_space.setter
+    def allocated_office_space(self, allocated_office_space):
+        self.__allocated_office_space = allocated_office_space
 
 class Staff(Person):
 
     def __init__(self, *args):
         super(Staff, self).__init__(*args)
+
 
 class Fellow(Person):
 
@@ -50,17 +52,18 @@ class Fellow(Person):
         # Default is 'N', meaning No
         self.wants_accommodation = kwargs.pop('wants_accommodation', 'N')
 
+    @property
+    def allocated_living_space(self):
+        return self.__allocated_living_space
 
+    @allocated_living_space.setter
+    def allocated_living_space(self, allocated_living_space):
+        self.__allocated_living_space = allocated_living_space
 
-    def get_allocated_living_space(self):
-        pass
+    @property
+    def wants_accommodation(self):
+        return self.__wants_accommodation
 
-    def get_wants_accommodation(self):
-        pass
-
-    def set_allocated_living_space(self, room=None):
-        pass
-
-    def set_wants_accommodation(self, room=None):
-        pass
-
+    @wants_accommodation.setter
+    def wants_accommodation(self, wants_accommodation):
+        self.__wants_accommodation = wants_accommodation
