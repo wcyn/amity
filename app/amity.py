@@ -1,9 +1,10 @@
 
 class Amity(object):
 
-    rooms = None
-    people = None
-
+    offices = None # List of Office objects
+    living_spaces = None # List of LivingSpace objects
+    fellows = None # List of Fellow objects
+    staff = None # List of Staff objects
 
     def create_room(self, room_names):
         pass

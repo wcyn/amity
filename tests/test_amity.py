@@ -13,21 +13,30 @@ class TestAmity(unittest.TestCase):
         self.office = Office("hogwarts")
         self.living_space = LivingSpace("python")
         self.people_list = self.amity.load_people("test_people.txt")
+        self.rooms = ["gates", "page", "jobs"]
+        amity.offices = [office]
+        amity.living_spaces = [living_space]
+        amity.fellows = [fellow]
+        amity.staff = [staff]
 
     def tearDown(self):
         del self.amity
-        del self.person 
         del self.staff 
         del self.fellow 
-        del self.room 
         del self.office 
         del self.living_space 
         del self.people_list
+        amity.offices = None
+        amity.living_spaces = None
+        amity.fellows = None
+        amity.staff = None
+
+    # Attributes Testing
 
     def test_rooms_attr_is_list(self):
         self.assertIsInstance(self.amity.rooms, list)
 
-    def test_rooms_attr_is_list_of_room_objs(self):
+    def test_rooms_attribute_is_list_of_room_objects(self):
         if self.amity.rooms:
             # To Avoid NoneType Error
             for i in self.amity.rooms:
@@ -38,7 +47,7 @@ class TestAmity(unittest.TestCase):
     def test_people_attr_is_list(self):
         self.assertIsInstance(self.amity.people, list)
 
-    def test_people_attr_is_list_of_person_objs(self):
+    def test_people_attr_is_list_of_person_objects(self):
         if self.amity.people:
             # To Avoid NoneType Error
             for i in self.amity.rooms:
