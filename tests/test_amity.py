@@ -32,7 +32,7 @@ class TestAmity(unittest.TestCase):
         self.amity.staff = None
 
     # Born Again Tests
-    # Create room tests
+    # create_room tests
     def create_room_adds_rooms_to_amity_room_list(self):
         self.amity.create_room(self.rooms)
         room_objs = []
@@ -51,7 +51,7 @@ class TestAmity(unittest.TestCase):
             self.amity.create_room(rooms)
 
     def test_create_room_returns_error_message_when_no_room_provided(self):
-        self.assertEqual("No room name was provided", self.amity.create_room([]))
+        self.assertEqual(self.amity.error_codes[8], self.amity.create_room([]))
     
     def test_create_room_filters_out_duplicate_room_names(self):
         gates = self.amity.create_room(["gates", "gates"])
@@ -97,15 +97,18 @@ class TestAmity(unittest.TestCase):
             self.amity.add_person("Jane", 42)
 
     def test_add_person_returns_error_message_if_type_is_invalid(self):
-        self.assertEqual("Invalid person type",
+        self.assertEqual(self.amity.error_codes[5],
                          self.amity.add_person("Jane", "manager"))    
 
     def test_add_person_returns_error_message_on_wrong_accommodation_option(self):
-        self.assertEqual("Invalid option %s" %"please",
+        self.assertEqual("%s %s" %(self.amity.error_codes[7], "please"),
                          self.amity.add_person("Jane", "manager", "please"))
 
     def test_add_person_staff_returns_staff_object(self):
-        self.assertIsInstance(self.amity.add_person("kate", "s"), Staff)
+        self.assertIsInstance(self.amity.add_person("Kate", "s"), Staff)
+
+    def test_add_person_fellow_returns_fellow_object(self):
+        self.assertIsInstance(self.amity.add_person("Kate", "f"), Fellow)
 
     # Attributes Testing
 

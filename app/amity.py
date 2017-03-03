@@ -5,6 +5,17 @@ class Amity(object):
     living_spaces = None # List of LivingSpace objects
     fellows = None # List of Fellow objects
     staff = None # List of Staff objects
+    error_codes = {
+        1: "Room does not exist",
+        2: "Person does not exist",
+        3: "A room with that name already exists",
+        4: "A person with that ID already exists",
+        5: "Invalid person type",
+        6: "Invalid room type",
+        7: "Invalid accommodation option",
+        8: "No room name was provided",
+        9: "Person name was not provided"
+    }
 
     def create_room(self, room_names):
         pass
