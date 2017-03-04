@@ -1,15 +1,16 @@
 import unittest
 
 from app.amity import Amity
-from app.person import Person, Staff, Fellow
-from app.room import Room, Office, LivingSpace
-    
+from app.person import Fellow, Person, Staff
+from app.room import LivingSpace, Office, Room
+
+
 class TestAmity(unittest.TestCase):
 
     def setUp(self):
         self.amity = Amity()
         self.staff = Staff("jane", "camelot")
-        self.fellow = Fellow("jake", "oculus")
+        self.fellow = Fellow("jake", "occulus")
         self.office = Office("hogwarts")
         self.living_space = LivingSpace("python")
         self.people_list = self.amity.load_people("test_people.txt")
@@ -21,10 +22,10 @@ class TestAmity(unittest.TestCase):
 
     def tearDown(self):
         del self.amity
-        del self.staff 
-        del self.fellow 
-        del self.office 
-        del self.living_space 
+        del self.staff
+        del self.fellow
+        del self.office
+        del self.living_space
         del self.people_list
         self.amity.offices = None
         self.amity.living_spaces = None
@@ -38,7 +39,8 @@ class TestAmity(unittest.TestCase):
         room_objs = []
         for i in self.rooms:
             room_objs.append[Office(i)]
-        self.assertEqual(self.amity.living_spaces, [self.living_space] + room_objs)
+        self.assertEqual(self.amity.living_spaces, [
+                         self.living_space] + room_objs)
 
     def create_room_adds_living_spaces_when_suffixed_with_ls(self):
         # Create room should return a list of created room objects
@@ -52,7 +54,7 @@ class TestAmity(unittest.TestCase):
 
     def test_create_room_returns_error_message_when_no_room_provided(self):
         self.assertEqual(self.amity.error_codes[8], self.amity.create_room([]))
-    
+
     def test_create_room_filters_out_duplicate_room_names(self):
         gates = self.amity.create_room(["gates", "gates"])
         self.assertEqual(self.amity.living_spaces, [self.living_space] + gates)
@@ -73,7 +75,7 @@ class TestAmity(unittest.TestCase):
         david = self.amity.add_person("David", "Fellow")
         maria = self.amity.add_person("Maria", "fellow")
         self.assertEqual(self.amity.fellows, [self.fellow, kate, jack,
-                         david, maria])
+                                              david, maria])
 
     def test_add_person_staff_adds_staff_to_amity_list(self):
         janet = self.amity.add_person("Janet", "Staff")
@@ -86,7 +88,7 @@ class TestAmity(unittest.TestCase):
         david = self.amity.add_person("David", "Staff")
         maria = self.amity.add_person("Maria", "staff")
         self.assertEqual(self.amity.staff, [self.staff, kate, jack,
-                         david, maria])
+                                            david, maria])
 
     def test_add_person_raises_type_error_with_non_string_person_name(self):
         with self.assertRaises(TypeError):
@@ -98,10 +100,10 @@ class TestAmity(unittest.TestCase):
 
     def test_add_person_returns_error_message_if_type_is_invalid(self):
         self.assertEqual(self.amity.error_codes[5],
-                         self.amity.add_person("Jane", "manager"))    
+                         self.amity.add_person("Jane", "manager"))
 
     def test_add_person_returns_error_message_on_wrong_accommodation_option(self):
-        self.assertEqual("%s %s" %(self.amity.error_codes[7], "please"),
+        self.assertEqual("%s %s" % (self.amity.error_codes[7], "please"),
                          self.amity.add_person("Jane", "manager", "please"))
 
     def test_add_person_staff_returns_staff_object(self):
@@ -109,6 +111,38 @@ class TestAmity(unittest.TestCase):
 
     def test_add_person_fellow_returns_fellow_object(self):
         self.assertIsInstance(self.amity.add_person("Kate", "f"), Fellow)
+
+    # allocate_room_to_person tests
+    def test_allocate_room_raises_attribute_error_for_non_person_object(self):
+        with self.assertRaises(AttributeError):
+            self.amity.allocate_room_to_person("person name", self.Room)
+
+    def test_allocate_room_raises_attribute_error_for_non_room_object(self):
+        with self.assertRaises(AttributeError):
+            self.amity.allocate_room_to_person(self.fellow, "office name")
+
+    def test_allocate_living_space_to_staff_gives_error_message(self):
+        # Test that nothing is added to living spaces or offices
+        staff = self.amity.allocate_room_to_person(
+            self.staff, self.living_space)
+        self.assertEqual(self.amity.living_spaces, [self.living_space])
+        self.assertEqual(self.amity.error_codes[10], staff)
+
+    def test_allocate_full_living_space_to_fellow_gives_error_message(self):
+        self.living_space.num_of_occupants = self.living_space.max_occupants
+        fellow = self.amity.allocate_room_to_person(
+            self.fellow, self.living_space)
+        self.assertEqual(self.amity.living_spaces, [self.living_space])
+        self.assertEqual(self.amity.error_codes[11],
+                         self.amity.allocate_room_to_person(
+            self.staff, self.living_space))
+
+    def test_allocate_living_space_room_adds_living_space_object_to_person(self):
+        # Returns the newly modified fellow object
+        fellow = self.amity.allocate_room_to_person(
+            self.fellow, self.living_space)
+        self.AssertIsInstance(fellow.allocated.living_space, LivingSpace)
+
 
     # Attributes Testing
 
@@ -138,12 +172,12 @@ class TestAmity(unittest.TestCase):
         # Should return a list of Rooms
         rooms = self.amity.create_room(["mario", "luigi"])
         self.assertIsInstance(rooms, list)
-        self.assertNotEqual(len(rooms), 0) 
+        self.assertNotEqual(len(rooms), 0)
         # What if only one was created
         # And if it's not empty. Confirm that the items are Rooms
         if rooms:
-            for i in rooms: #
-                self.assertIsInstance(i, Room) 
+            for i in rooms:
+                self.assertIsInstance(i, Room)
 
     def test_create_room_raises_value_error_for_non_string(self):
         with self.assertRaises(ValueError):
@@ -166,11 +200,11 @@ class TestAmity(unittest.TestCase):
 
     def test_add_person_accepts_valid_types(self):
         self.assertEqual(self.amity.add_person("jane", "random", "y"),
-                              "Invalid person type")
+                         "Invalid person type")
 
     def test_add_person_accepts_valid_accommodation_opt(self):
         self.assertEqual(self.amity.add_person("jane", "f", "maybe"),
-                              "Accomodation choice can only be y or n")
+                         "Accomodation choice can only be y or n")
 
     def test_add_fellow_returns_fellow_obj(self):
         fellow = self.amity.add_person("jane", "f", "y")
@@ -187,33 +221,34 @@ class TestAmity(unittest.TestCase):
         fellow = self.amity.add_person("jane", "f", "y")
         self.assertIsInstance(fellow.get_allocated_office_space(), Office)
 
-    def test_add_staff_assigns_office(self): #needs more tests for random rooms
+    # needs more tests for random rooms
+    def test_add_staff_assigns_office(self):
         # Should still create person even if no office space is available
         staff = self.amity.add_person("ken", "s")
         self.assertIsInstance(staff.get_allocated_office_space(), Office)
 
     def test_reallocate_person_returns_person_obj(self):
-        office2 = Office("valhala") # reduce number of people in a room  and
+        office2 = Office("valhala")  # reduce number of people in a room  and
         # increment new room
         self.assertIsInstance(self.amity.reallocate_person(
-                                    self.person.id, office2.name), Person)
+            self.person.id, office2.name), Person)
 
     def test_reallocate_person_office_works(self):
         office2 = Office("valhala")
         self.amity.reallocate_person(self.person.id, office2.name)
         self.assertEqual(office2.name,
-                           self.person.allocated_office_space.name)
+                         self.person.allocated_office_space.name)
 
     def test_reallocate_fellow_living_space_works(self):
         living_space2 = LivingSpace("java")
         self.amity.reallocate_person(self.fellow.id, living_space2.name)
         self.assertEqual(living_space2.name,
-                           self.fellow.allocated_office_space.name)
+                         self.fellow.allocated_office_space.name)
 
     def test_reallocate_person_fellow_office(self):
         office2 = Office("valhala")
         self.assertEqual(office2, self.amity.reallocate_person(
-                            self.fellow.id, office2.name))
+            self.fellow.id, office2.name))
 
     def test_reallocate_person_raises_value_error_for_non_str_id(self):
         with self.assertRaises(ValueError):
@@ -230,20 +265,20 @@ class TestAmity(unittest.TestCase):
         # blank files?
         self.assertEqual(4, len(self.people_list["fellows"]))
         self.assertEqual(3, len(self.people_list["staff"]))
-        self.assertEqual(True, ["OLUWAFEMI SULE", "FELLOW", "Y"] 
+        self.assertEqual(True, ["OLUWAFEMI SULE", "FELLOW", "Y"]
                          in self.people_list["fellows"])
-        self.assertEqual(True, ["DOMINIC WALTERS", "STAFF"] 
+        self.assertEqual(True, ["DOMINIC WALTERS", "STAFF"]
                          in self.people_list["staff"])
-        self.assertEqual(True, ["SIMON PATTERSON", "FELLOW", "Y"] 
+        self.assertEqual(True, ["SIMON PATTERSON", "FELLOW", "Y"]
                          in self.people_list["fellows"])
-        self.assertEqual(True, ["MARI LAWRENCE", "FELLOW", "Y"] 
+        self.assertEqual(True, ["MARI LAWRENCE", "FELLOW", "Y"]
                          in self.people_list["fellows"])
-        self.assertEqual(True, ["LEIGH RILEY", "STAFF"] 
+        self.assertEqual(True, ["LEIGH RILEY", "STAFF"]
                          in self.people_list["staff"])
-        self.assertEqual(True, ["TANA LOPEZ", "FELLOW", "Y"] 
+        self.assertEqual(True, ["TANA LOPEZ", "FELLOW", "Y"]
                          in self.people_list["fellows"])
-        self.assertEqual(True, ["KELLY McGUIRE", "STAFF"] 
-                         in self.people_list["staff"])        
+        self.assertEqual(True, ["KELLY McGUIRE", "STAFF"]
+                         in self.people_list["staff"])
 
     def test_load_people_adds_people(self):
         people_names = [i.name for i in self.amity.people]
@@ -262,4 +297,3 @@ class TestAmity(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-
