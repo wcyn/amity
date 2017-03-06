@@ -32,8 +32,9 @@ class TestAmity(unittest.TestCase):
         self.amity.fellows = None
         self.amity.staff = None
 
-    # Born Again Tests
-    # create_room tests
+    # Create Room Tests
+    # *****************************
+
     def create_room_adds_rooms_to_amity_room_list(self):
         self.amity.create_room(self.rooms)
         room_objects = []
@@ -63,11 +64,13 @@ class TestAmity(unittest.TestCase):
         self.amity.create_room(["python"])
         self.assertEqual(self.amity.living_spaces, [self.living_space])
 
-    # add-person tests
+    # Add Person tests
+    # *****************************
+
     def test_add_person_fellow_adds_fellow_to_amity_list(self):
         janet = self.amity.add_person("Janet", "Fellow")
         self.assertEqual(self.amity.fellows, [self.fellow, janet])
-        self.assertIsInstance(self.amity.fellows.pop(), Fellow)
+        self.assertIsInstance(self.amity.fellows[-1], Fellow)
 
     def test_add_person_fellow_adds_fellow_object_with_all_valid_types(self):
         kate = self.amity.add_person("Kate", "f")
@@ -80,7 +83,7 @@ class TestAmity(unittest.TestCase):
     def test_add_person_staff_adds_staff_to_amity_list(self):
         janet = self.amity.add_person("Janet", "Staff")
         self.assertEqual(self.amity.staff, [self.staff, janet])
-        self.assertIsInstance(self.amity.staff.pop(), Staff)
+        self.assertIsInstance(self.amity.staff[-1], Staff)
 
     def test_add_person_staff_adds_staff_object_with_all_valid_types(self):
         kate = self.amity.add_person("Kate", "f")
@@ -112,7 +115,15 @@ class TestAmity(unittest.TestCase):
     def test_add_person_fellow_returns_fellow_object(self):
         self.assertIsInstance(self.amity.add_person("Kate", "f"), Fellow)
 
-    # allocate_room_to_person tests
+    def test_add_person_automatically_allocates_room_if_available(self):
+        kate = self.amity.add_person("Kate", "f")
+        jane = self.amity.add_person("Jane", "s")
+        self.assertIsInstance(kate.allocated_office_space, Office)
+        self.assertIsInstance(jane.allocated_office_space, Office)
+
+    # Allocate Room to Person tests
+    # *****************************
+
     def test_allocate_room_raises_attribute_error_for_non_person_object(self):
         with self.assertRaises(AttributeError):
             self.amity.allocate_room_to_person("person name", Room)
@@ -130,19 +141,76 @@ class TestAmity(unittest.TestCase):
 
     def test_allocate_full_living_space_to_fellow_gives_error_message(self):
         self.living_space.num_of_occupants = self.living_space.max_occupants
-        fellow = self.amity.allocate_room_to_person(
-            self.fellow, self.living_space)
+        self.amity.allocate_room_to_person(self.fellow, self.living_space)
         self.assertEqual(self.amity.living_spaces, [self.living_space])
         self.assertEqual(self.amity.error_codes[11],
                          self.amity.allocate_room_to_person(
-            self.staff, self.living_space))
+            self.fellow, self.living_space))
 
-    def test_allocate_living_space_room_adds_living_space_object_to_person(self):
+    def test_allocate_living_space_adds_living_space_object_to_person(self):
         # Returns the newly modified fellow object
         fellow = self.amity.allocate_room_to_person(
             self.fellow, self.living_space)
-        self.assertIsInstance(fellow.allocated.living_space, LivingSpace)
+        self.assertIsInstance(fellow.allocated_living_space, LivingSpace)
 
+    def test_allocate_living_space_adds_living_space_allocates_correct_living_space(self):
+        # Returns the newly modified fellow object
+        self.amity.allocate_room_to_person(
+            self.fellow, self.living_space)
+        self.assertEqual(self.fellow.allocated_living_space, self.living_space)
+
+    def test_allocate_living_space_increments_number_of_occupants_in_living_space(self):
+        self.amity.allocate_room_to_person(
+            self.fellow, self.living_space)
+        self.assertEqual(1, self.living_space.num_of_occupants)
+        self.amity.allocate_room_to_person(
+            self.fellow, self.living_space)
+        self.assertEqual(2, self.living_space.num_of_occupants)
+
+    def test_allocate_office_adds_living_space_allocates_correct_office(self):
+        # Returns the newly modified fellow object
+        self.amity.allocate_room_to_person(
+            self.fellow, self.office)
+        self.amity.allocate_room_to_person(
+            self.staff, self.office)
+        self.assertEqual(self.fellow.allocated_office_space, self.office)
+        self.assertEqual(self.staff.allocated_office_space, self.office)
+
+    def test_allocate_full_office_to_person_gives_error_message(self):
+        self.office.num_of_occupants = self.office.max_occupants
+        self.amity.allocate_room_to_person(self.fellow, self.office)
+        self.amity.allocate_room_to_person(self.staff, self.office)
+        self.assertEqual(self.amity.offices, [self.office])
+        self.assertEqual(self.amity.error_codes[11], self.amity.allocate_room_to_person(self.fellow, self.office))
+        self.assertEqual(self.amity.error_codes[11], self.amity.allocate_room_to_person(self.staff, self.office))
+
+    def test_allocate_office_increments_number_of_occupants_in_office(self):
+        self.amity.allocate_room_to_person(self.fellow, self.office)
+        self.assertEqual(1, self.office.num_of_occupants)
+        self.amity.allocate_room_to_person(self.fellow, self.office)
+        self.assertEqual(2, self.office.num_of_occupants)
+
+    # Reallocate Room to Person Tests
+    # *******************************
+
+    def test_reallocate_person_returns_error_message_when_person_does_not_exist(self):
+        result = self.amity.reallocate_person("gavin", "hogwarts")
+        self.assertEqual(result, self.amity.error_codes[2])
+
+    def test_reallocate_person_returns_error_message_when_room_does_not_exist(self):
+        result = self.amity.reallocate_person("jane", "rift")
+        self.assertEqual(result, self.amity.error_codes[1])
+
+    def test_reallocate_person_raises_type_error_with_non_string_person_name(self):
+        with self.assertRaises(TypeError):
+            self.amity.reallocate_person([], "hogwarts")
+
+    def test_reallocate_person_raises_type_error_with_non_string_room_name(self):
+        with self.assertRaises(TypeError):
+            self.amity.reallocate_person("jane", 42)
+
+
+    # *********************
 
     # Attributes Testing
 
@@ -204,7 +272,7 @@ class TestAmity(unittest.TestCase):
 
     def test_add_person_accepts_valid_accommodation_opt(self):
         self.assertEqual(self.amity.add_person("jane", "f", "maybe"),
-                         "Accomodation choice can only be y or n")
+                         "Accommodation choice can only be y or n")
 
     def test_add_fellow_returns_fellow_obj(self):
         fellow = self.amity.add_person("jane", "f", "y")
