@@ -9,7 +9,7 @@ class TestAmity(unittest.TestCase):
 
     def setUp(self):
         self.amity = Amity()
-        self.staff = Staff("jane", "camelot")
+        self.staff = Staff("jane ", "camelot")
         self.fellow = Fellow("jake", "occulus")
         self.office = Office("hogwarts")
         self.living_space = LivingSpace("python")
@@ -251,6 +251,42 @@ class TestAmity(unittest.TestCase):
         self.assertTrue([x for x in self.amity.staff if x.name == "LEIGH RILEY"])
         self.assertTrue([x for x in self.amity.staff if x.name == "KELLY McGUIRE"])
 
+    # Print Allocations Tests
+    # *****************************
+    def test_print_allocations_raises_type_error_when_filename_not_string(self):
+        with self.assertRaises(TypeError):
+            self.amity.print_allocations(42)
+
+    def test_print_allocations_gives_error_message_when_file_doesnt_exist(self):
+        result = self.amity.print_allocations("andelans.txt")
+        self.assertEqual(result, self.amity.error_codes[12] + " 'andelans.txt'")
+
+    def test_print_allocations_gives_error_message_when_filename_has_invalid_characters(self):
+        result = self.amity.print_allocations("nairobi*.txt")
+        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
+        result = self.amity.print_allocations("nairobi?.txt")
+        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
+        result = self.amity.print_allocations("nairobi/.txt")
+        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
+        result = self.amity.print_allocations("nairobi\.txt")
+        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
+
+    def test_print_allocations_prints_only_allocated_people_to_file(self):
+        fellow2 = Fellow("Vader") # Unallocated
+        self.amity.allocate_room_to_person(self.living_space, self.fellow)
+        self.amity.allocate_room_to_person(self.office, self.fellow)
+        self.amity.allocate_room_to_person(self.office, self.staff)
+
+        filename = "empty.txt"
+        self.amity.print_allocations(filename)
+        with open(filename) as f:
+            allocations = f.readlines()
+        # Get rid of newlines
+        allocations = [x.strip() for x in allocations]
+        self.assertTrue("Jane Staff Camelot" in allocations)
+        self.assertTrue("Jake Fellow Occulus" in allocations)
+        self.assertTrue("Jake Fellow Camelot" in allocations)
+        self.assertFalse("Vader Fellow" in allocations)
 
     # *********************
 
