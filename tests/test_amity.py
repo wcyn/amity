@@ -210,6 +210,57 @@ class TestAmity(unittest.TestCase):
             self.amity.reallocate_person("jane", 42)
 
 
+    # Load People Tests
+    # *****************************
+
+    def test_load_people_raises_type_error_when_filename_not_string(self):
+        with self.assertRaises(TypeError):
+            self.amity.load_people(42)
+
+    def test_load_people_gives_error_message_when_file_doesnt_exist(self):
+        result = self.amity.load_people("andelans.txt")
+        self.assertEqual(result, self.amity.error_codes[12] + " 'andelans.txt'")
+
+    def test_load_people_gives_error_message_when_file_is_empty(self):
+        result = self.amity.load_people("empty.txt")
+        self.assertEqual(result, self.amity.error_codes[13] + " 'empty.txt'")
+
+    def test_load_people_gives_error_message_when_file_is_wrongly_formatted(self):
+        result = self.amity.load_people("wrong_format.txt")
+        self.assertEqual(result, self.amity.error_codes[14] + " 'wrong_format.txt'")
+
+    def test_load_people_gives_error_message_when_filename_has_invalid_characters(self):
+        result = self.amity.load_people("nairobi*.txt")
+        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
+
+    def test_load_people_loads_people_into_amity_data_variables(self):
+        self.assertEqual(4, len(self.people_list["fellows"]))
+        self.assertEqual(3, len(self.people_list["staff"]))
+        self.assertEqual(True, ["OLUWAFEMI SULE", "FELLOW", "Y"]
+                         in self.people_list["fellows"])
+        self.assertEqual(True, ["DOMINIC WALTERS", "STAFF"]
+                         in self.people_list["staff"])
+        self.assertEqual(True, ["SIMON PATTERSON", "FELLOW", "Y"]
+                         in self.people_list["fellows"])
+        self.assertEqual(True, ["MARI LAWRENCE", "FELLOW", "Y"]
+                         in self.people_list["fellows"])
+        self.assertEqual(True, ["LEIGH RILEY", "STAFF"]
+                         in self.people_list["staff"])
+        self.assertEqual(True, ["TANA LOPEZ", "FELLOW", "Y"]
+                         in self.people_list["fellows"])
+        self.assertEqual(True, ["KELLY McGUIRE", "STAFF"]
+                         in self.people_list["staff"])
+
+    def test_load_people_adds_people(self):
+        people_names = [i.name for i in self.amity.people]
+        self.assertEqual(True, "OLUWAFEMI SULE" in self.people_names)
+        self.assertEqual(True, "DOMINIC WALTERS" in self.people_names)
+        self.assertEqual(True, "SIMON PATTERSON" in self.people_names)
+        self.assertEqual(True, "MARI LAWRENCE" in self.people_names)
+        self.assertEqual(True, "LEIGH RILEY" in self.people_names)
+        self.assertEqual(True, "TANA LOPEZ" in self.people_names)
+        self.assertEqual(True, "KELLY McGUIRE" in self.people_names)
+
     # *********************
 
     # Attributes Testing
