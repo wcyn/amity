@@ -232,34 +232,25 @@ class TestAmity(unittest.TestCase):
     def test_load_people_gives_error_message_when_filename_has_invalid_characters(self):
         result = self.amity.load_people("nairobi*.txt")
         self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
+        result = self.amity.load_people("nairobi?.txt")
+        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
+        result = self.amity.load_people("nairobi/.txt")
+        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
+        result = self.amity.load_people("nairobi\.txt")
+        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
 
     def test_load_people_loads_people_into_amity_data_variables(self):
-        self.assertEqual(4, len(self.people_list["fellows"]))
-        self.assertEqual(3, len(self.people_list["staff"]))
-        self.assertEqual(True, ["OLUWAFEMI SULE", "FELLOW", "Y"]
-                         in self.people_list["fellows"])
-        self.assertEqual(True, ["DOMINIC WALTERS", "STAFF"]
-                         in self.people_list["staff"])
-        self.assertEqual(True, ["SIMON PATTERSON", "FELLOW", "Y"]
-                         in self.people_list["fellows"])
-        self.assertEqual(True, ["MARI LAWRENCE", "FELLOW", "Y"]
-                         in self.people_list["fellows"])
-        self.assertEqual(True, ["LEIGH RILEY", "STAFF"]
-                         in self.people_list["staff"])
-        self.assertEqual(True, ["TANA LOPEZ", "FELLOW", "Y"]
-                         in self.people_list["fellows"])
-        self.assertEqual(True, ["KELLY McGUIRE", "STAFF"]
-                         in self.people_list["staff"])
+        self.amity.load_people("people.in")
+        self.assertEqual(5, len(self.amity.fellows))
+        self.assertEqual(4, len(self.amity.staff))
+        self.assertTrue([x for x in self.amity.fellows if x.name == "OLUWAFEMI SULE"])
+        self.assertTrue([x for x in self.amity.fellows if x.name == "SIMON PATTERSON"])
+        self.assertTrue([x for x in self.amity.fellows if x.name == "MARI LAWRENCE"])
+        self.assertTrue([x for x in self.amity.fellows if x.name == "TANA LOPEZ"])
+        self.assertTrue([x for x in self.amity.staff if x.name == "DOMINIC WALTERS"])
+        self.assertTrue([x for x in self.amity.staff if x.name == "LEIGH RILEY"])
+        self.assertTrue([x for x in self.amity.staff if x.name == "KELLY McGUIRE"])
 
-    def test_load_people_adds_people(self):
-        people_names = [i.name for i in self.amity.people]
-        self.assertEqual(True, "OLUWAFEMI SULE" in self.people_names)
-        self.assertEqual(True, "DOMINIC WALTERS" in self.people_names)
-        self.assertEqual(True, "SIMON PATTERSON" in self.people_names)
-        self.assertEqual(True, "MARI LAWRENCE" in self.people_names)
-        self.assertEqual(True, "LEIGH RILEY" in self.people_names)
-        self.assertEqual(True, "TANA LOPEZ" in self.people_names)
-        self.assertEqual(True, "KELLY McGUIRE" in self.people_names)
 
     # *********************
 
@@ -382,22 +373,22 @@ class TestAmity(unittest.TestCase):
 
     def test_load_people_works(self):
         # blank files?
-        self.assertEqual(4, len(self.people_list["fellows"]))
-        self.assertEqual(3, len(self.people_list["staff"]))
+        self.assertEqual(4, len(self.amity.fellows))
+        self.assertEqual(3, len(self.amity.staff))
         self.assertEqual(True, ["OLUWAFEMI SULE", "FELLOW", "Y"]
-                         in self.people_list["fellows"])
+                         in self.amity.fellows)
         self.assertEqual(True, ["DOMINIC WALTERS", "STAFF"]
-                         in self.people_list["staff"])
+                         in self.amity.staff)
         self.assertEqual(True, ["SIMON PATTERSON", "FELLOW", "Y"]
-                         in self.people_list["fellows"])
+                         in self.amity.fellows)
         self.assertEqual(True, ["MARI LAWRENCE", "FELLOW", "Y"]
-                         in self.people_list["fellows"])
+                         in self.amity.fellows)
         self.assertEqual(True, ["LEIGH RILEY", "STAFF"]
-                         in self.people_list["staff"])
+                         in self.amity.staff)
         self.assertEqual(True, ["TANA LOPEZ", "FELLOW", "Y"]
-                         in self.people_list["fellows"])
+                         in self.amity.fellows)
         self.assertEqual(True, ["KELLY McGUIRE", "STAFF"]
-                         in self.people_list["staff"])
+                         in self.amity.staff)
 
     def test_load_people_adds_people(self):
         people_names = [i.name for i in self.amity.people]
