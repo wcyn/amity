@@ -15,13 +15,17 @@ class Amity(object):
         8: "No room name was provided",
         9: "Person name was not provided",
         10: "Cannot allocate a living space to a staff member",
-        11: "Cannot add person. The room is fully occupied"
+        11: "Cannot add person. The room is fully occupied",
+        12: "Cannot find the file",
+        13: "The file is empty",
+        14: "Wrongly formatted file",
+        15: "Invalid characters in the filename"
     }
 
     def create_room(self, room_names):
         pass
 
-    def add_person(self, person_name, type, wants_accomodation="n"):
+    def add_person(self, person_name, type, wants_accommodation="n"):
         pass
 
     def allocate_room_to_person(self, room, person):
