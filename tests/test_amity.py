@@ -36,11 +36,11 @@ class TestAmity(unittest.TestCase):
     # create_room tests
     def create_room_adds_rooms_to_amity_room_list(self):
         self.amity.create_room(self.rooms)
-        room_objs = []
+        room_objects = []
         for i in self.rooms:
-            room_objs.append[Office(i)]
+            room_objects.append[Office(i)]
         self.assertEqual(self.amity.living_spaces, [
-                         self.living_space] + room_objs)
+                         self.living_space] + room_objects)
 
     def create_room_adds_living_spaces_when_suffixed_with_ls(self):
         # Create room should return a list of created room objects
@@ -115,7 +115,7 @@ class TestAmity(unittest.TestCase):
     # allocate_room_to_person tests
     def test_allocate_room_raises_attribute_error_for_non_person_object(self):
         with self.assertRaises(AttributeError):
-            self.amity.allocate_room_to_person("person name", self.Room)
+            self.amity.allocate_room_to_person("person name", Room)
 
     def test_allocate_room_raises_attribute_error_for_non_room_object(self):
         with self.assertRaises(AttributeError):
@@ -141,7 +141,7 @@ class TestAmity(unittest.TestCase):
         # Returns the newly modified fellow object
         fellow = self.amity.allocate_room_to_person(
             self.fellow, self.living_space)
-        self.AssertIsInstance(fellow.allocated.living_space, LivingSpace)
+        self.assertIsInstance(fellow.allocated.living_space, LivingSpace)
 
 
     # Attributes Testing
@@ -282,13 +282,13 @@ class TestAmity(unittest.TestCase):
 
     def test_load_people_adds_people(self):
         people_names = [i.name for i in self.amity.people]
-        assertEqual(True, "OLUWAFEMI SULE" in self.people_names)
-        assertEqual(True, "DOMINIC WALTERS" in self.people_names)
-        assertEqual(True, "SIMON PATTERSON" in self.people_names)
-        assertEqual(True, "MARI LAWRENCE" in self.people_names)
-        assertEqual(True, "LEIGH RILEY" in self.people_names)
-        assertEqual(True, "TANA LOPEZ" in self.people_names)
-        assertEqual(True, "KELLY McGUIRE" in self.people_names)
+        self.assertEqual(True, "OLUWAFEMI SULE" in self.people_names)
+        self.assertEqual(True, "DOMINIC WALTERS" in self.people_names)
+        self.assertEqual(True, "SIMON PATTERSON" in self.people_names)
+        self.assertEqual(True, "MARI LAWRENCE" in self.people_names)
+        self.assertEqual(True, "LEIGH RILEY" in self.people_names)
+        self.assertEqual(True, "TANA LOPEZ" in self.people_names)
+        self.assertEqual(True, "KELLY McGUIRE" in self.people_names)
 
     def test_print_allocations(self):
         with self.amity.print_allocations() as (out, err):
