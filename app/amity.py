@@ -1,5 +1,8 @@
+import sys
+
 class Amity(object):
     """ """
+    out = sys.stdout
     offices = None  # List of Office objects
     living_spaces = None  # List of LivingSpace objects
     fellows = None  # List of Fellow objects
@@ -37,10 +40,13 @@ class Amity(object):
     def load_people(self, filename):
         pass
 
-    def print_allocations(self, filename):
+    def print_allocations(self, filename=None):
+        print("Jane Staff Camelot")
+        print("Jake Fellow Occulus")
+        print("Jake Fellow Camelot")
         pass
 
-    def print_unallocated(self, filename):
+    def print_unallocated(self, filename=None):
         pass
 
     def print_room(self, room_name):

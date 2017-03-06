@@ -38,8 +38,8 @@ class Person(object):
 
 class Staff(Person):
 
-    def __init__(self, *args):
-        super(Staff, self).__init__(*args)
+    def __init__(self, *args, **kwargs):
+        super(Staff, self).__init__(*args, **kwargs)
 
 
 class Fellow(Person):

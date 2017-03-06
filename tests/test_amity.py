@@ -1,16 +1,19 @@
 import unittest
 
+from io import StringIO
+from unittest.mock import patch
+
 from app.amity import Amity
-from app.person import Fellow, Person, Staff
-from app.room import LivingSpace, Office, Room
+from app.person import Person, Fellow, Staff
+from app.room import Room, LivingSpace, Office
 
 
 class TestAmity(unittest.TestCase):
 
     def setUp(self):
         self.amity = Amity()
-        self.staff = Staff("jane ", "camelot")
-        self.fellow = Fellow("jake", "occulus")
+        self.staff = Staff("jane", allocated_office_space="camelot")
+        self.fellow = Fellow("jake", allocated_living_space="occulus")
         self.office = Office("hogwarts")
         self.living_space = LivingSpace("python")
         self.people_list = self.amity.load_people("test_people.txt")
@@ -27,10 +30,6 @@ class TestAmity(unittest.TestCase):
         del self.office
         del self.living_space
         del self.people_list
-        self.amity.offices = None
-        self.amity.living_spaces = None
-        self.amity.fellows = None
-        self.amity.staff = None
 
     # Create Room Tests
     # *****************************
@@ -126,7 +125,7 @@ class TestAmity(unittest.TestCase):
 
     def test_allocate_room_raises_attribute_error_for_non_person_object(self):
         with self.assertRaises(AttributeError):
-            self.amity.allocate_room_to_person("person name", Room)
+            self.amity.allocate_room_to_person("person name", self.office)
 
     def test_allocate_room_raises_attribute_error_for_non_room_object(self):
         with self.assertRaises(AttributeError):
@@ -272,7 +271,7 @@ class TestAmity(unittest.TestCase):
         self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
 
     def test_print_allocations_prints_only_allocated_people_to_file(self):
-        fellow2 = Fellow("Vader") # Unallocated
+        Fellow("Vader") # Unallocated
         self.amity.allocate_room_to_person(self.living_space, self.fellow)
         self.amity.allocate_room_to_person(self.office, self.fellow)
         self.amity.allocate_room_to_person(self.office, self.staff)
@@ -287,6 +286,27 @@ class TestAmity(unittest.TestCase):
         self.assertTrue("Jake Fellow Occulus" in allocations)
         self.assertTrue("Jake Fellow Camelot" in allocations)
         self.assertFalse("Vader Fellow" in allocations)
+
+    def print_hello(self):
+        print("hello world")
+
+    def test_print_allocations_prints_correctly_to_console_if_no_file_given(self):
+        Fellow("Vader")  # Unallocated
+        self.amity.allocate_room_to_person(self.living_space, self.fellow)
+        self.amity.allocate_room_to_person(self.office, self.fellow)
+        self.amity.allocate_room_to_person(self.office, self.staff)
+        allocations = "Jane Staff Camelot\n"\
+                        "Jake Fellow Occulus\n"\
+                        "Jake Fellow Camelot"
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            # print("hello world")
+            self.amity.print_allocations()
+            self.assertEqual(fakeOutput.getvalue().strip(), allocations)
+
+    # Print Unallocated Tests
+    # *****************************
+    # def test
+
 
     # *********************
 
