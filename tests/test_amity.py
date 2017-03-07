@@ -356,13 +356,17 @@ class TestAmity(unittest.TestCase):
     # Print Room Tests
     # *****************************
 
-    def test_print_room_raises_type_error_when_roomname_not_string(self):
+    def test_print_room_raises_type_error_when_room_name_not_string(self):
         with self.assertRaises(TypeError):
             self.amity.print_room(42)
 
     def test_print_room_gives_error_message_when_room_doesnt_exist(self):
         result = self.amity.print_room("parliament")
         self.assertEqual(result, self.amity.error_codes[1] + ": 'parliament'")
+
+    def test_print_room_gives_informative_message_when_room_is_empty(self):
+        result = self.amity.print_room("hogwarts")
+        self.assertEqual(result, self.amity.error_codes[16] + ": 'hogwarts'")
 
     def test_print_room_prints_only_the_people_in_the_room_to_console(self):
         Fellow("Vader")  # Unallocated
@@ -376,7 +380,7 @@ class TestAmity(unittest.TestCase):
             self.amity.print_room("hogwarts")
             self.assertEqual(fakeOutput.getvalue().strip(), office_occupants)
 
-
+    
 
     # *********************
 

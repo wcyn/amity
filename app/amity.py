@@ -22,7 +22,8 @@ class Amity(object):
         12: "Cannot find the file",
         13: "The file is empty",
         14: "Wrongly formatted file",
-        15: "Invalid characters in the filename"
+        15: "Invalid characters in the filename",
+        16: "The room is empty"
     }
 
     def create_room(self, room_names):
