@@ -1,6 +1,9 @@
 import sys
 import sqlite3
 
+from .room import Office, LivingSpace
+from .person import Staff, Fellow
+
 class Amity(object):
     """ """
     out = sys.stdout
@@ -12,8 +15,8 @@ class Amity(object):
     error_codes = {
         1: "Room does not exist",
         2: "Person does not exist",
-        3: "A room with that name already exists",
-        4: "A person with that ID already exists",
+        3: "Cannot create a duplicate room",
+        4: "Cannot create a duplicate person",
         5: "Invalid person type",
         6: "Invalid room type",
         7: "Invalid accommodation option",
@@ -30,7 +33,34 @@ class Amity(object):
     }
 
     def create_room(self, room_names):
-        pass
+        new_rooms = []
+        if not isinstance(room_names, list):
+            return "Only a list of strings is allowed"
+        if not len(room_names):
+            return self.error_codes[8]
+        room_names = set(room_names)
+        for room_name in room_names:
+            print("Room name: ", room_name)
+            if room_name not in ([x.name for x in self.living_spaces] +
+                                    [x.name for x in self.offices]):
+                try:
+                    if room_name[-3:] == "-ls":
+                        print("Ls!")
+                        new_living_space = LivingSpace(room_name[:-3])
+                        self.living_spaces.append(new_living_space)
+                        new_rooms.append(new_living_space)
+                    else:
+                        new_office = Office(room_name)
+                        self.offices.append(new_office)
+                        new_rooms.append(new_office)
+                except TypeError as e:
+                    raise(e)
+                except Exception as e:
+                    print(e)
+                    raise(e)
+            else:
+                return self.error_codes[3] + " '%s'" % room_name
+        return new_rooms
 
     def add_person(self, person_name, type, wants_accommodation="n"):
         pass
@@ -72,3 +102,4 @@ class Amity(object):
 
             # a = Amity()
             # print(a.save_state("test_database/"))
+

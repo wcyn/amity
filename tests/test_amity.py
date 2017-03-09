@@ -36,34 +36,41 @@ class TestAmity(unittest.TestCase):
     # Create Room Tests
     # *****************************
 
-    def create_room_adds_rooms_to_amity_room_list(self):
-        self.amity.create_room(self.rooms)
-        room_objects = []
-        for i in self.rooms:
-            room_objects.append[Office(i)]
-        self.assertEqual(self.amity.living_spaces, [
-            self.living_space] + room_objects)
+    def test_create_room_adds_rooms_to_amity_room_list(self):
+        new_rooms = self.amity.create_room(self.rooms)
+        self.assertEqual(self.amity.offices, [
+            self.office] + new_rooms)
 
-    def create_room_adds_living_spaces_when_suffixed_with_ls(self):
+    def test_create_room_adds_living_spaces_when_suffixed_with_ls(self):
         # Create room should return a list of created room objects
         bee = self.amity.create_room(["bee-ls"])
         self.assertEqual(self.amity.living_spaces, [self.living_space] + bee)
+        print(self.amity.living_spaces[1].__dict__)
+        self.assertEqual(self.amity.living_spaces[1].name, "bee")
 
     def test_create_room_raises_type_error_with_non_string_room_names(self):
         with self.assertRaises(TypeError):
-            rooms = [42, "gates", [42]]
+            rooms = [45, "gates", "room1"]
             self.amity.create_room(rooms)
+
+    def test_create_room_returns_error_message_when_argument_not_list(self):
+        self.assertEqual(self.amity.create_room("my room"), "Only a list of strings is allowed")
+        # Assert that nothing has been added to LivingSpaces or Offices
+        self.assertEqual(self.amity.living_spaces, [self.living_space])
+        self.assertEqual(self.amity.offices, [self.office])
 
     def test_create_room_returns_error_message_when_no_room_provided(self):
         self.assertEqual(self.amity.error_codes[8], self.amity.create_room([]))
 
     def test_create_room_filters_out_duplicate_room_names(self):
         gates = self.amity.create_room(["gates", "gates"])
-        self.assertEqual(self.amity.living_spaces, [self.living_space] + gates)
+        self.assertEqual(len(self.amity.offices), 2)
+        self.assertEqual(self.amity.offices, [self.office] + gates)
 
     def test_create_room_does_not_add_duplicate_room_name(self):
-        self.amity.create_room(["python"])
+        result = self.amity.create_room(["python"])
         self.assertEqual(self.amity.living_spaces, [self.living_space])
+        self.assertEqual(self.amity.error_codes[3] + " 'python'", result)
 
     # Add Person tests
     # *****************************
