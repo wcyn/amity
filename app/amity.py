@@ -1,4 +1,5 @@
 import sys
+import sqlite3
 
 class Amity(object):
     """ """
@@ -7,6 +8,7 @@ class Amity(object):
     living_spaces = None  # List of LivingSpace objects
     fellows = None  # List of Fellow objects
     staff = None  # List of Staff objects
+    connection = None
     error_codes = {
         1: "Room does not exist",
         2: "Person does not exist",
@@ -23,7 +25,8 @@ class Amity(object):
         13: "The file is empty",
         14: "Wrongly formatted file",
         15: "Invalid characters in the filename",
-        16: "The room is empty"
+        16: "The room is empty",
+        17: "Invalid character(s) in the database name"
     }
 
     def create_room(self, room_names):
@@ -52,3 +55,20 @@ class Amity(object):
 
     def print_room(self, room_name):
         pass
+
+    def save_state(self, db="sqlite_database", override=False):
+        self.connection = sqlite3.connect(db)
+        pass
+            # self.connection = "Nothing here"
+            # try:
+            #     self.connection = sqlite3.connect(db)
+            #     return "connection succeeded"
+            # except Exception as e:
+            #     print("Error: ", e)
+            #     return "connection failed"
+            # finally:
+            #     print("Conn: ", self.connection)
+            # pass
+
+            # a = Amity()
+            # print(a.save_state("test_database/"))

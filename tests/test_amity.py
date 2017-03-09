@@ -1,11 +1,13 @@
 import unittest
+import sqlite3
 
 from io import StringIO
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock,Mock
 
 from app.amity import Amity
 from app.person import Person, Fellow, Staff
 from app.room import Room, LivingSpace, Office
+from .test_database import TestDataBase
 
 
 class TestAmity(unittest.TestCase):
@@ -380,7 +382,75 @@ class TestAmity(unittest.TestCase):
             self.amity.print_room("hogwarts")
             self.assertEqual(fakeOutput.getvalue().strip(), office_occupants)
 
-    
+    # Save State Tests
+    # *****************************
+
+    def test_save_state_raises_type_error_when_database_name_not_string(self):
+        with self.assertRaises(TypeError):
+            self.amity.save_state(42)
+
+    def test_save_state_gives_asks_for_override_when_database_already_exists(self):
+        sqlite3.connect = MagicMock(return_value="Would you like to override the database" + " 'test_database'?")
+        self.amity.save_state("test_database")
+        result = self.amity.save_state("test_database")
+        sqlite3.connect.assert_called_with("test_database")
+        self.assertEqual(result, "Would you like to override the database" + " 'test_database'?")
+
+    def test_save_state_gives_informative_message_when_no_data_to_save(self):
+        self.amity.offices = []
+        self.amity.living_spaces = []
+        self.amity.fellows = []
+        self.amity.staff = []
+        self.people_list = []
+
+        sqlite3.connect = MagicMock(return_value='No data to save')
+        result = self.amity.save_state("test_database")
+        sqlite3.connect.assert_called_with("test_database")
+        self.assertEqual(result, "No data to save")
+
+
+    # def test_save_state_saves_correctly_to_the_database(self):
+    #     Fellow("Vader")  # Unallocated
+    #     Staff("Malia")  # Unallocated
+    #     self.amity.allocate_room_to_person(self.living_space, self.fellow)
+    #     self.amity.allocate_room_to_person(self.office, self.fellow)
+    #     self.amity.allocate_room_to_person(self.office, self.staff)
+    #     office_occupants = "Jake Fellow\n" \
+    #                         "Jane Staff"
+
+    def test_sqlite3_connect_success(self):
+        sqlite3.connect = MagicMock(return_value='connection succeeded')
+        result = self.amity.save_state("test_database")
+        sqlite3.connect.assert_called_with("test_database")
+        print("Connection succeed: ", result)
+        self.assertEqual(result, 'connection succeeded')
+
+    def test_sqlite3_connect_fail(self):
+        sqlite3.connect = MagicMock(return_value='connection failed')
+        result = self.amity.save_state('test_database/')
+        sqlite3.connect.assert_called_with('test_database/')
+        self.assertEqual(result, 'connection failed')
+
+    def test_sqlite3_connect_with_sideaffect(self):
+        self._setup_mock_sqlite3_connect()
+
+        dbc = self.amity.save_state('good_connection_string')
+        self.assertTrue(self.amity.connection)
+        sqlite3.connect.assert_called_with('good_connection_string')
+
+        dbc = self.amity.save_state('bad_connection_string')
+        self.assertFalse(self.amity.connection)
+        sqlite3.connect.assert_called_with('bad_connection_string')
+
+    def _setup_mock_sqlite3_connect(self):
+        values = {'good_connection_string': True,
+                  'bad_connection_string': False}
+
+        def side_effect(arg):
+            return values[arg]
+
+        sqlite3.connect = Mock(side_effect=side_effect)
+
 
     # *********************
 
