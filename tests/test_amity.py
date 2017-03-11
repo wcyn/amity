@@ -95,28 +95,28 @@ class TestAmity(unittest.TestCase):
         self.assertIsInstance(self.amity.staff[-1], Staff)
 
     def test_add_person_staff_adds_staff_object_with_all_valid_types(self):
-        kate = self.amity.add_person("Kate", "surname", "f")
-        jack = self.amity.add_person("Jack", "surname", "F")
+        kate = self.amity.add_person("Kate", "surname", "s")
+        jack = self.amity.add_person("Jack", "surname", "S")
         david = self.amity.add_person("David", "surname", "Staff")
         maria = self.amity.add_person("Maria", "surname", "staff")
         self.assertEqual(self.amity.staff, [self.staff, kate, jack,
                                             david, maria])
 
-    def test_add_person_raises_type_error_with_non_string_person_name(self):
-        with self.assertRaises(TypeError):
+    def test_add_person_raises_attribute_error_with_non_string_person_name(self):
+        with self.assertRaises(AttributeError):
             self.amity.add_person(42, "surname", "Staff")
 
-    def test_add_person_raises_type_error_for_non_str_type(self):
-        with self.assertRaises(TypeError):
+    def test_add_person_raises_attribute_error_for_non_str_type(self):
+        with self.assertRaises(AttributeError):
             self.amity.add_person("Jane", "surname", 42)
 
     def test_add_person_returns_error_message_if_type_is_invalid(self):
-        self.assertEqual(self.amity.error_codes[5],
+        self.assertEqual(self.amity.error_codes[5] + " 'manager'",
                          self.amity.add_person("Jane", "surname", "manager"))
 
     def test_add_person_returns_error_message_on_wrong_accommodation_option(self):
-        self.assertEqual("%s %s" % (self.amity.error_codes[7], "please"),
-                         self.amity.add_person("Jane", "surname", "manager", "please"))
+        self.assertEqual("%s %s" % (self.amity.error_codes[7], "'please'"),
+                         self.amity.add_person("Jane", "surname", "staff", "please"))
 
     def test_add_person_staff_returns_staff_object(self):
         self.assertIsInstance(self.amity.add_person("Kate", "surname", "s"), Staff)

@@ -65,8 +65,33 @@ class Amity(object):
                 return self.error_codes[3] + " '%s'" % room_name
         return new_rooms
 
-    def add_person(self, person_name, type, wants_accommodation="n"):
-        pass
+    def add_person(self, first_name, last_name, type, wants_accommodation="n"):
+        new_person = None
+        try:
+            if type.lower() in ["f", "fellow"]:
+                print("Fellow!")
+                new_person = Fellow(first_name, last_name)
+                self.fellows.append(new_person)
+            elif type.lower() in ["s", "staff"]:
+                new_person = Staff(first_name, last_name)
+                self.staff.append(new_person)
+            else:
+                return self.error_codes[5] + " '%s'" % type
+
+            if wants_accommodation.lower() in ["y", "yes"]:
+                pass
+            elif wants_accommodation.lower() in ["n", "no"]:
+                pass
+            else:
+                return self.error_codes[7] + " '%s'" % wants_accommodation
+
+        except TypeError as e:
+            raise (e)
+        except Exception as e:
+            print(e)
+            raise (e)
+
+        return new_person
 
     def allocate_room_to_person(self, room, person):
         pass
