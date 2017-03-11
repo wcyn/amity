@@ -1,8 +1,12 @@
+import  uuid
+
+
 class Person(object):
-    def __init__(self, name, **kwargs):
+    def __init__(self, first_name, last_name, **kwargs):
         # If not defined, id is None
-        self.id = kwargs.pop('id', None)
-        self.name = name
+        self.id = kwargs.pop('id', uuid.uuid4())
+        self.first_name = first_name
+        self.last_name = last_name
         # If not defined, allocated_office_space is None
         self.allocated_office_space = kwargs.pop('allocated_office_space',
                                                  None)
@@ -21,12 +25,27 @@ class Person(object):
         self.__id = id
 
     @property
-    def name(self):
-        return self.__name
+    def first_name(self):
+        return self.__first_name
 
-    @name.setter
-    def name(self, name):
-        self.__name = name
+    @first_name.setter
+    def first_name(self, first_name):
+        if first_name.islower() and first_name.istitle():
+            self.__first_name = ''.join(first_name.split()).title()
+        else:
+            self.__first_name = ''.join(first_name.split())
+
+    @property
+    def last_name(self):
+        return self.__last_name
+
+    @last_name.setter
+    def last_name(self, last_name):
+        if last_name.islower() and last_name.istitle():
+            self.__last_name = ''.join(last_name.split()).title()
+        else:
+            self.__last_name = ''.join(last_name.split())
+
 
     @property
     def allocated_office_space(self):

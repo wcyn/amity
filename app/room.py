@@ -14,7 +14,10 @@ class Room(object):
 
     @name.setter
     def name(self, name):
-        self.__name = name
+        if name.islower() and name.istitle():
+            self.__name = ''.join(name.split()).title()
+        else:
+            self.__name = ''.join(name.split())
 
     @property
     def num_of_occupants(self):

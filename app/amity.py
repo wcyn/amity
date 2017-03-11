@@ -1,8 +1,10 @@
 import sys
 import sqlite3
 
-from .room import Office, LivingSpace
-from .person import Staff, Fellow
+from app.room import Office, LivingSpace
+from app.person import Staff, Fellow
+from pathlib import Path
+
 
 class Amity(object):
     """ """
@@ -12,6 +14,7 @@ class Amity(object):
     fellows = None  # List of Fellow objects
     staff = None  # List of Staff objects
     connection = None
+    database_directory = "../databases/"
     error_codes = {
         1: "Room does not exist",
         2: "Person does not exist",
@@ -86,20 +89,28 @@ class Amity(object):
     def print_room(self, room_name):
         pass
 
-    def save_state(self, db="sqlite_database", override=False):
-        self.connection = sqlite3.connect(db)
-        pass
-            # self.connection = "Nothing here"
-            # try:
-            #     self.connection = sqlite3.connect(db)
-            #     return "connection succeeded"
-            # except Exception as e:
-            #     print("Error: ", e)
-            #     return "connection failed"
-            # finally:
-            #     print("Conn: ", self.connection)
-            # pass
+    def save_state(self, db_name="sqlite_database", override=False):
+        try:
+            if set('[~!@#$%^&*()+{}"/\\:;\']+$').intersection(db_name):
+                return self.error_codes[17] + " '%s'" % db_name
 
-            # a = Amity()
-            # print(a.save_state("test_database/"))
+            db_file = self.database_directory + db_name
+            db_path = Path(db_file)
+            if db_path.is_file():
+                return "About to override database '%s'" % db_name
+
+            if not (self.offices + self.living_spaces  + self.fellows + self.staff):
+                return "No data to save"
+
+            self.connection = sqlite3.connect(db_file)
+            return "connection succeeded"
+        except Exception as e:
+            print("Error: ", e)
+            raise(e)
+        finally:
+            print("Conn: ", self.connection)
+        pass
+
+    def load_state(self, db_name):
+        pass
 

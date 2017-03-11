@@ -1,5 +1,6 @@
 import unittest
 import sqlite3
+import uuid
 
 from io import StringIO
 from unittest.mock import patch, MagicMock,Mock
@@ -14,8 +15,8 @@ class TestAmity(unittest.TestCase):
 
     def setUp(self):
         self.amity = Amity()
-        self.staff = Staff("jane", allocated_office_space="camelot")
-        self.fellow = Fellow("jake", allocated_living_space="occulus")
+        self.staff = Staff("jane", "surname", allocated_office_space="camelot")
+        self.fellow = Fellow("jake", "surname", allocated_living_space="occulus")
         self.office = Office("hogwarts")
         self.living_space = LivingSpace("python")
         self.people_list = self.amity.load_people("test_people.txt")
@@ -76,56 +77,56 @@ class TestAmity(unittest.TestCase):
     # *****************************
 
     def test_add_person_fellow_adds_fellow_to_amity_list(self):
-        janet = self.amity.add_person("Janet", "Fellow")
+        janet = self.amity.add_person("Janet","surname", "Fellow")
         self.assertEqual(self.amity.fellows, [self.fellow, janet])
         self.assertIsInstance(self.amity.fellows[-1], Fellow)
 
     def test_add_person_fellow_adds_fellow_object_with_all_valid_types(self):
-        kate = self.amity.add_person("Kate", "f")
-        jack = self.amity.add_person("Jack", "F")
-        david = self.amity.add_person("David", "Fellow")
-        maria = self.amity.add_person("Maria", "fellow")
+        kate = self.amity.add_person("Kate", "surname", "f")
+        jack = self.amity.add_person("Jack", "surname", "F")
+        david = self.amity.add_person("David", "surname", "Fellow")
+        maria = self.amity.add_person("Maria", "surname", "fellow")
         self.assertEqual(self.amity.fellows, [self.fellow, kate, jack,
                                               david, maria])
 
     def test_add_person_staff_adds_staff_to_amity_list(self):
-        janet = self.amity.add_person("Janet", "Staff")
+        janet = self.amity.add_person("Janet", "surname", "Staff")
         self.assertEqual(self.amity.staff, [self.staff, janet])
         self.assertIsInstance(self.amity.staff[-1], Staff)
 
     def test_add_person_staff_adds_staff_object_with_all_valid_types(self):
-        kate = self.amity.add_person("Kate", "f")
-        jack = self.amity.add_person("Jack", "F")
-        david = self.amity.add_person("David", "Staff")
-        maria = self.amity.add_person("Maria", "staff")
+        kate = self.amity.add_person("Kate", "surname", "f")
+        jack = self.amity.add_person("Jack", "surname", "F")
+        david = self.amity.add_person("David", "surname", "Staff")
+        maria = self.amity.add_person("Maria", "surname", "staff")
         self.assertEqual(self.amity.staff, [self.staff, kate, jack,
                                             david, maria])
 
     def test_add_person_raises_type_error_with_non_string_person_name(self):
         with self.assertRaises(TypeError):
-            self.amity.add_person(42, "Staff")
+            self.amity.add_person(42, "surname", "Staff")
 
     def test_add_person_raises_type_error_for_non_str_type(self):
         with self.assertRaises(TypeError):
-            self.amity.add_person("Jane", 42)
+            self.amity.add_person("Jane", "surname", 42)
 
     def test_add_person_returns_error_message_if_type_is_invalid(self):
         self.assertEqual(self.amity.error_codes[5],
-                         self.amity.add_person("Jane", "manager"))
+                         self.amity.add_person("Jane", "surname", "manager"))
 
     def test_add_person_returns_error_message_on_wrong_accommodation_option(self):
         self.assertEqual("%s %s" % (self.amity.error_codes[7], "please"),
-                         self.amity.add_person("Jane", "manager", "please"))
+                         self.amity.add_person("Jane", "surname", "manager", "please"))
 
     def test_add_person_staff_returns_staff_object(self):
-        self.assertIsInstance(self.amity.add_person("Kate", "s"), Staff)
+        self.assertIsInstance(self.amity.add_person("Kate", "surname", "s"), Staff)
 
     def test_add_person_fellow_returns_fellow_object(self):
-        self.assertIsInstance(self.amity.add_person("Kate", "f"), Fellow)
+        self.assertIsInstance(self.amity.add_person("Kate", "surname", "f"), Fellow)
 
     def test_add_person_automatically_allocates_room_if_available(self):
-        kate = self.amity.add_person("Kate", "f")
-        jane = self.amity.add_person("Jane", "s")
+        kate = self.amity.add_person("Kate", "surname", "f")
+        jane = self.amity.add_person("Jane", "surname", "s")
         self.assertIsInstance(kate.allocated_office_space, Office)
         self.assertIsInstance(jane.allocated_office_space, Office)
 
@@ -201,21 +202,25 @@ class TestAmity(unittest.TestCase):
     # Reallocate Room to Person Tests
     # *******************************
 
-    def test_reallocate_person_returns_error_message_when_person_does_not_exist(self):
-        result = self.amity.reallocate_person("gavin", "hogwarts")
-        self.assertEqual(result, self.amity.error_codes[2])
+    def test_reallocate_person_raises_index_error_when_index_out_of_range(self):
+        with self.assertRaises(IndexError):
+            self.amity.reallocate_person(self.amity.fellows[1], "hogwarts")
 
     def test_reallocate_person_returns_error_message_when_room_does_not_exist(self):
         result = self.amity.reallocate_person("jane", "rift")
-        self.assertEqual(result, self.amity.error_codes[1])
+        self.assertEqual(result, self.amity.fellows[0])
 
-    def test_reallocate_person_raises_type_error_with_non_string_person_name(self):
-        with self.assertRaises(TypeError):
+    def test_reallocate_person_raises_attribute_error_with_non_person_object_ie_list(self):
+        with self.assertRaises(AttributeError):
             self.amity.reallocate_person([], "hogwarts")
+
+    def test_reallocate_person_raises_type_error_with_non_integer_person_id_ie_string(self):
+        with self.assertRaises(AttributeError):
+            self.amity.reallocate_person("jane", "hogwarts")
 
     def test_reallocate_person_raises_type_error_with_non_string_room_name(self):
         with self.assertRaises(TypeError):
-            self.amity.reallocate_person("jane", 42)
+            self.amity.reallocate_person(self.amity.fellows[0], 42)
 
 
     # Load People Tests
@@ -392,16 +397,18 @@ class TestAmity(unittest.TestCase):
     # Save State Tests
     # *****************************
 
-    def test_save_state_raises_type_error_when_database_name_not_string(self):
+    def test_save_state_raises_type_error_when_database_name_not_string_ie_number(self):
         with self.assertRaises(TypeError):
             self.amity.save_state(42)
 
+    def test_save_state_raises_type_error_when_database_name_not_string_ie_list(self):
+        with self.assertRaises(TypeError):
+            self.amity.save_state(["hello"])
+
     def test_save_state_gives_asks_for_override_when_database_already_exists(self):
         sqlite3.connect = MagicMock(return_value="Would you like to override the database" + " 'test_database'?")
-        self.amity.save_state("test_database")
         result = self.amity.save_state("test_database")
-        sqlite3.connect.assert_called_with("test_database")
-        self.assertEqual(result, "Would you like to override the database" + " 'test_database'?")
+        self.assertEqual(result, "About to override database" + " 'test_database'")
 
     def test_save_state_gives_informative_message_when_no_data_to_save(self):
         self.amity.offices = []
@@ -412,52 +419,19 @@ class TestAmity(unittest.TestCase):
 
         sqlite3.connect = MagicMock(return_value='No data to save')
         result = self.amity.save_state("test_database")
-        sqlite3.connect.assert_called_with("test_database")
         self.assertEqual(result, "No data to save")
 
-
-    # def test_save_state_saves_correctly_to_the_database(self):
-    #     Fellow("Vader")  # Unallocated
-    #     Staff("Malia")  # Unallocated
-    #     self.amity.allocate_room_to_person(self.living_space, self.fellow)
-    #     self.amity.allocate_room_to_person(self.office, self.fellow)
-    #     self.amity.allocate_room_to_person(self.office, self.staff)
-    #     office_occupants = "Jake Fellow\n" \
-    #                         "Jane Staff"
-
-    def test_sqlite3_connect_success(self):
+    def test_save_state_sqlite3_connect_success(self):
         sqlite3.connect = MagicMock(return_value='connection succeeded')
         result = self.amity.save_state("test_database")
         sqlite3.connect.assert_called_with("test_database")
         print("Connection succeed: ", result)
         self.assertEqual(result, 'connection succeeded')
 
-    def test_sqlite3_connect_fail(self):
+    def test_save_state_sqlite3_connect_fail_on_invalid_characters(self):
         sqlite3.connect = MagicMock(return_value='connection failed')
         result = self.amity.save_state('test_database/')
-        sqlite3.connect.assert_called_with('test_database/')
-        self.assertEqual(result, 'connection failed')
-
-    def test_sqlite3_connect_with_sideaffect(self):
-        self._setup_mock_sqlite3_connect()
-
-        dbc = self.amity.save_state('good_connection_string')
-        self.assertTrue(self.amity.connection)
-        sqlite3.connect.assert_called_with('good_connection_string')
-
-        dbc = self.amity.save_state('bad_connection_string')
-        self.assertFalse(self.amity.connection)
-        sqlite3.connect.assert_called_with('bad_connection_string')
-
-    def _setup_mock_sqlite3_connect(self):
-        values = {'good_connection_string': True,
-                  'bad_connection_string': False}
-
-        def side_effect(arg):
-            return values[arg]
-
-        sqlite3.connect = Mock(side_effect=side_effect)
-
+        self.assertEqual(result, self.amity.error_codes[17] + " 'test_database/'")
 
     # *********************
 
