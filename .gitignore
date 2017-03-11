@@ -87,3 +87,9 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# sublime text
+amity.sublime-project
+amity.sublime-workspace
+.idea/
+.DS_Store
