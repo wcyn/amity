@@ -432,6 +432,37 @@ class TestAmity(unittest.TestCase):
         sqlite3.connect = MagicMock(return_value='connection failed')
         result = self.amity.save_state('test_database/')
         self.assertEqual(result, self.amity.error_codes[17] + " 'test_database/'")
+        result = self.amity.save_state('test_database*')
+        self.assertEqual(result, self.amity.error_codes[17] + " 'test_database*'")
+
+    # Load State Tests
+    # *****************************
+
+    def test_load_state_raises_type_error_when_database_name_not_string_ie_number(self):
+        with self.assertRaises(TypeError):
+            self.amity.load_state(42)
+
+    def test_load_state_raises_type_error_when_database_name_not_string_ie_list(self):
+        with self.assertRaises(TypeError):
+            self.amity.load_state(["hello"])
+
+    def test_load_state_gives_informative_message_when_no_database_is_empty(self):
+        self.amity.offices = []
+        self.amity.living_spaces = []
+        self.amity.fellows = []
+        self.amity.staff = []
+        self.people_list = []
+
+        sqlite3.connect = MagicMock(return_value="No data to Load. Empty database 'test_database'")
+        result = self.amity.load_state("test_database")
+        self.assertEqual(result, "No data to Load. Empty database 'test_database'")
+
+    def test_load_state_sqlite3_connect_fail_on_invalid_characters(self):
+        sqlite3.connect = MagicMock(return_value='connection failed')
+        result = self.amity.load_state('test_database/')
+        self.assertEqual(result, self.amity.error_codes[17] + " 'test_database/'")
+        result = self.amity.load_state('test_database*')
+        self.assertEqual(result, self.amity.error_codes[17] + " 'test_database*'")
 
     # *********************
 
