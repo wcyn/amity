@@ -93,8 +93,24 @@ class Amity(object):
 
         return new_person
 
-    def allocate_room_to_person(self, room, person):
-        pass
+    def allocate_room_to_person(self, person, room):
+        try:
+            if (room.get_max_occupants() - room.num_of_occupants):
+                if isinstance(person, Staff) and isinstance(room, LivingSpace):
+                    return self.error_codes[10]
+                elif isinstance(room, Office):
+                    person.allocated_office_space = room
+                else:
+                    person.allocated_living_space = room
+                room.num_of_occupants += 1
+            else:
+                return self.error_codes[11]
+        except AttributeError as e:
+            raise e
+        except Exception as e:
+            raise e
+        return person
+
 
     def reallocate_person(self, person_id, new_room_name):
         pass

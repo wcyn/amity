@@ -1,7 +1,7 @@
 class Room(object):
     def __init__(self, name):
         self.name = name
-        self.num_of_occupants = None
+        self.num_of_occupants = 0
 
     def __new__(cls, *args, **kwargs):
         if cls is Room:

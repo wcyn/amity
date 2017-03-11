@@ -46,7 +46,6 @@ class Person(object):
         else:
             self.__last_name = ''.join(last_name.split())
 
-
     @property
     def allocated_office_space(self):
         return self.__allocated_office_space
