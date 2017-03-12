@@ -206,7 +206,16 @@ class TestAmity(unittest.TestCase):
         self.assertEqual(result, "About to move %s from %s to %s" %(self.fellow.first_name,
                                                                     self.office.name, office2.name))
 
-    # def test_allocate_person_decrements_num_of_occupants_in_previous_room_if_person_previously_allocated(self):
+    def test_allocate_person_causes_decrement_in_num_of_occupants_in_previous_room_if_person_previously_allocated(self):
+        office2 = Office("krypton")
+        self.assertEqual(0, office2.num_of_occupants)
+        self.assertEqual(0, self.office.num_of_occupants)
+        self.fellow.allocated_office_space = self.office
+        self.assertEqual(1, self.office.num_of_occupants)
+        self.amity.allocate_room_to_person(self.fellow, office2, True)
+        self.assertEqual(1, office2.num_of_occupants)
+        self.assertEqual(0, self.office.num_of_occupants)
+        self.assertEqual(office2, self.fellow.allocated_office_space)
 
     # Reallocate Room to Person Tests
     # *******************************

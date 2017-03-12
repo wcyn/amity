@@ -1,5 +1,5 @@
 import  uuid
-from app.room import Room
+from app.room import Office, LivingSpace
 
 
 class Person(object):
@@ -11,6 +11,7 @@ class Person(object):
         # If not defined, allocated_office_space is None
         self.allocated_office_space = kwargs.pop('allocated_office_space',
                                                  None)
+
     # Override the __new__() method
     def __new__(cls, *args, **kwargs):
         if cls is Person:
@@ -52,8 +53,14 @@ class Person(object):
         return self.__allocated_office_space
 
     @allocated_office_space.setter
-    def allocated_office_space(self, allocated_office_space):
-        self.__allocated_office_space = allocated_office_space
+    def allocated_office_space(self, office_space):
+        if isinstance(office_space, Office):
+            # If Person already had an Office Space, decrement number of occupants from previous office space
+            if isinstance(self.__allocated_office_space, Office):
+                self.__allocated_office_space.num_of_occupants -= 1
+            # Automatically increment number of occupants in newly allocated office
+            office_space.num_of_occupants += 1
+        self.__allocated_office_space = office_space
 
 class Staff(Person):
 
@@ -70,14 +77,22 @@ class Fellow(Person):
          None)
         # Default is 'N', meaning No
         self.wants_accommodation = kwargs.pop('wants_accommodation', 'N')
+        if isinstance(self.__allocated_living_space, LivingSpace):
+            self.__allocated_living_space.num_of_occupants -= 1
 
     @property
     def allocated_living_space(self):
         return self.__allocated_living_space
 
     @allocated_living_space.setter
-    def allocated_living_space(self, allocated_living_space):
-        self.__allocated_living_space = allocated_living_space
+    def allocated_living_space(self, living_space):
+        if isinstance(living_space, LivingSpace):
+            # If Fellow already had a Living Space, decrement number of occupants from previous living space
+            if isinstance(self.__allocated_living_space, LivingSpace):
+                self.__allocated_living_space.num_of_occupants -= 1
+            # Automatically increment number of occupants in newly allocated living space
+            living_space.num_of_occupants += 1
+        self.__allocated_living_space = living_space
 
     @property
     def wants_accommodation(self):

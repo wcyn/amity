@@ -100,23 +100,21 @@ class Amity(object):
                 if isinstance(person, Staff) and isinstance(room, LivingSpace):
                     return self.error_codes[10]
 
-                if isinstance(person.allocated_office_space, Office) and not reallocate:
-                    # Person already has office space
+                already_allocated_office = isinstance(room, Office) and isinstance(
+                    person.allocated_office_space, Office)
+                already_allocated_living_space = isinstance(room, LivingSpace) and isinstance(
+                    person.allocated_living_space, LivingSpace)
+                already_allocated = already_allocated_living_space or already_allocated_office
+
+                if already_allocated and not reallocate:
+                    # Person already has office space or living space
                     return "About to move %s from %s to %s" %(person.first_name,
                                                               person.allocated_office_space.name, room.name)
-                if isinstance(room, Office):
-                    # Decrease number of people in previous office
-                    if isinstance(person.allocated_office_space, Office) and reallocate:
-                        person.allocated_office_space.num_of_occupants -= 1
 
+                if isinstance(room, Office):
                     person.allocated_office_space = room
                 elif isinstance(room, LivingSpace):
-                    # Decrease number of people in previous Living Space
-                    if isinstance(person.allocated_living_space, LivingSpace) and reallocate:
-                        person.allocated_living_space.num_of_occupants -= 1
-
                     person.allocated_living_space = room
-                room.num_of_occupants += 1
             else:
                 return self.error_codes[11]
         except AttributeError as e:
