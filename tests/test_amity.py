@@ -238,9 +238,13 @@ class TestAmity(unittest.TestCase):
     # Load People Tests
     # *****************************
 
+    def test_load_people_raises_OS_error_when_filename_not_is_integer(self):
+        with self.assertRaises(OSError):
+            self.amity.load_people(42)
+
     def test_load_people_raises_type_error_when_filename_not_string(self):
         with self.assertRaises(TypeError):
-            self.amity.load_people(42)
+            self.amity.load_people([])
 
     def test_load_people_gives_error_message_when_file_doesnt_exist(self):
         result = self.amity.load_people("andelans.txt")
@@ -254,27 +258,27 @@ class TestAmity(unittest.TestCase):
         result = self.amity.load_people("wrong_format.txt")
         self.assertEqual(result, self.amity.error_codes[14] + " 'wrong_format.txt'")
 
-    def test_load_people_gives_error_message_when_filename_has_invalid_characters(self):
-        result = self.amity.load_people("nairobi*.txt")
-        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
-        result = self.amity.load_people("nairobi?.txt")
-        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
-        result = self.amity.load_people("nairobi/.txt")
-        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
-        result = self.amity.load_people("nairobi\.txt")
-        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
-
     def test_load_people_loads_people_into_amity_data_variables(self):
         self.amity.load_people("people.in")
         self.assertEqual(5, len(self.amity.fellows))
         self.assertEqual(4, len(self.amity.staff))
-        self.assertTrue([x for x in self.amity.fellows if x.name == "OLUWAFEMI SULE"])
-        self.assertTrue([x for x in self.amity.fellows if x.name == "SIMON PATTERSON"])
-        self.assertTrue([x for x in self.amity.fellows if x.name == "MARI LAWRENCE"])
-        self.assertTrue([x for x in self.amity.fellows if x.name == "TANA LOPEZ"])
-        self.assertTrue([x for x in self.amity.staff if x.name == "DOMINIC WALTERS"])
-        self.assertTrue([x for x in self.amity.staff if x.name == "LEIGH RILEY"])
-        self.assertTrue([x for x in self.amity.staff if x.name == "KELLY McGUIRE"])
+        for i in self.amity.fellows:
+            print("Fellow: ", i.__dict__)
+
+        self.assertTrue([x for x in self.amity.fellows if x.first_name.lower() + " " + x.last_name.lower() ==
+                         "OLUWAFEMI SULE".lower()])
+        self.assertTrue([x for x in self.amity.fellows if x.first_name.lower() + " " + x.last_name.lower() ==
+                         "SIMON PATTERSON".lower()])
+        self.assertTrue([x for x in self.amity.fellows if x.first_name.lower() + " " + x.last_name.lower() ==
+                         "MARI LAWRENCE".lower()])
+        self.assertTrue([x for x in self.amity.fellows if x.first_name.lower() + " " + x.last_name.lower() ==
+                         "TANA LOPEZ".lower()])
+        self.assertTrue([x for x in self.amity.staff if x.first_name.lower() + " " + x.last_name.lower() ==
+                         "DOMINIC WALTERS".lower()])
+        self.assertTrue([x for x in self.amity.staff if x.first_name.lower() + " " + x.last_name.lower() ==
+                         "LEIGH RILEY".lower()])
+        self.assertTrue([x for x in self.amity.staff if x.first_name.lower() + " " + x.last_name.lower() ==
+                         "KELLY McGUIRE".lower()])
 
     # Print Allocations Tests
     # *****************************
@@ -287,15 +291,15 @@ class TestAmity(unittest.TestCase):
         result = self.amity.print_allocations("andelans.txt")
         self.assertEqual(result, self.amity.error_codes[12] + " 'andelans.txt'")
 
-    def test_print_allocations_gives_error_message_when_filename_has_invalid_characters(self):
-        result = self.amity.print_allocations("nairobi*.txt")
-        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
+    def test_print_allocations_ignores_invalid_characters_in_filename(self):
+        result = self.amity.print_allocations("nairobi@.txt")
+        self.assertEqual(result, "Successfully printed allocations to 'nairobi.txt'")
         result = self.amity.print_allocations("nairobi?.txt")
-        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
+        self.assertEqual(result, "Successfully printed allocations to 'nairobi.txt'")
         result = self.amity.print_allocations("nairobi/.txt")
-        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
+        self.assertEqual(result, "Successfully printed allocations to 'nairobi.txt'")
         result = self.amity.print_allocations("nairobi\.txt")
-        self.assertEqual(result, self.amity.error_codes[15] + " 'nairobi*.txt'")
+        self.assertEqual(result, "Successfully printed allocations to 'nairobi.txt'")
 
     def test_print_allocations_prints_only_allocated_people_to_file(self):
         Fellow("Vader") # Unallocated
@@ -303,7 +307,7 @@ class TestAmity(unittest.TestCase):
         self.amity.allocate_room_to_person(self.office, self.fellow)
         self.amity.allocate_room_to_person(self.office, self.staff)
 
-        filename = "empty.txt"
+        filename = self.amity.files_directory + "empty.txt"
         self.amity.print_allocations(filename)
         with open(filename) as f:
             unallocated = f.readlines()

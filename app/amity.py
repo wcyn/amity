@@ -1,3 +1,4 @@
+import re
 import sys
 import sqlite3
 
@@ -15,6 +16,13 @@ class Amity(object):
     staff = None  # List of Staff objects
     connection = None
     database_directory = "../databases/"
+    files_directory = "../files/"
+    allowed_fellow_strings = ["fellow", "f"]
+    allowed_staff_strings = ["staff", "s"]
+    allowed_office_strings = ["office", "o"]
+    allowed_living_space_strings = ["living_space", "ls"]
+    allowed_yes_strings= ["yes", "y"]
+    allowed_no_strings = ["no", "n"]
     error_codes = {
         1: "Room does not exist",
         2: "Person does not exist",
@@ -48,7 +56,6 @@ class Amity(object):
                                     [x.name for x in self.offices]):
                 try:
                     if room_name[-3:] == "-ls":
-                        print("Ls!")
                         new_living_space = LivingSpace(room_name[:-3])
                         self.living_spaces.append(new_living_space)
                         new_rooms.append(new_living_space)
@@ -68,19 +75,19 @@ class Amity(object):
     def add_person(self, first_name, last_name, type, wants_accommodation="n"):
         new_person = None
         try:
-            if type.lower() in ["f", "fellow"]:
+            if type.lower() in self.allowed_fellow_strings:
                 print("Fellow!")
                 new_person = Fellow(first_name, last_name)
                 self.fellows.append(new_person)
-            elif type.lower() in ["s", "staff"]:
+            elif type.lower() in self.allowed_staff_strings:
                 new_person = Staff(first_name, last_name)
                 self.staff.append(new_person)
             else:
                 return self.error_codes[5] + " '%s'" % type
 
-            if wants_accommodation.lower() in ["y", "yes"]:
+            if wants_accommodation.lower() in self.allowed_yes_strings:
                 pass
-            elif wants_accommodation.lower() in ["n", "no"]:
+            elif wants_accommodation.lower() in self.allowed_no_strings:
                 pass
             else:
                 return self.error_codes[7] + " '%s'" % wants_accommodation
@@ -104,7 +111,6 @@ class Amity(object):
                     person.allocated_office_space, Office)
                 already_allocated_living_space = isinstance(room, LivingSpace) and isinstance(
                     person.allocated_living_space, LivingSpace)
-                already_allocated = already_allocated_living_space or already_allocated_office
 
                 if not reallocate:
                     if already_allocated_office:
@@ -115,7 +121,6 @@ class Amity(object):
                         # Person already has office space
                         return "About to move %s from %s to %s" %(person.first_name,
                                                               person.allocated_living_space.name, room.name)
-
                 if isinstance(room, Office):
                     person.allocated_office_space = room
                 elif isinstance(room, LivingSpace):
@@ -129,7 +134,40 @@ class Amity(object):
         return person
 
     def load_people(self, filename):
-        pass
+        try:
+            with open(filename) as f:
+                people = f.readlines()
+            if not len(" ".join([i.strip() for i in people])):
+                return self.error_codes[13] + " '%s'" % filename
+
+            loaded_people = []
+            for i in people:
+                # match the required formatting for each line
+                if re.match('^(\w+\s\w+\s(FELLOW|STAFF|F|S)(\s(YES|Y|NO|N))?)$',i.strip(), re.IGNORECASE):
+                    # proceed to create the objects else ignore the bad line
+                    person_data = i.strip().split()
+                    if person_data[2].lower() in self.allowed_fellow_strings:
+                        fellow = Fellow(person_data[0], person_data[1])
+                        self.fellows.append(fellow)
+                        loaded_people.append(fellow)
+                    else:
+                        staff = Staff(person_data[0], person_data[1])
+                        self.staff.append(staff)
+                        loaded_people.append(staff)
+                else:
+                    print("Ignoring badly formatted line: ", i.strip())
+
+            if not loaded_people:
+                # None of the lines had the required format
+                return self.error_codes[14] + " '%s'" % filename
+
+
+        except FileNotFoundError as e:
+            return self.error_codes[12] + " '%s'" % filename
+        except TypeError as e:
+            raise TypeError
+        except Exception as e:
+            raise e
 
     def print_allocations(self, filename=None):
         print("Jane Staff Camelot")
