@@ -199,15 +199,24 @@ class TestAmity(unittest.TestCase):
         self.amity.allocate_room_to_person(self.fellow, self.office)
         self.assertEqual(2, self.office.num_of_occupants)
 
+    def test_allocate_room_returns_transfer_message_if_person_already_has_room(self):
+        office2 = Office("krypton")
+        self.fellow.allocated_office_space = self.office
+        result = self.amity.allocate_room_to_person(self.fellow, office2)
+        self.assertEqual(result, "About to move %s from %s to %s" %(self.fellow.first_name,
+                                                                    self.office.name, office2.name))
+
+    # def test_allocate_person_decrements_num_of_occupants_in_previous_room_if_person_previously_allocated(self):
+
     # Reallocate Room to Person Tests
     # *******************************
 
-    def test_reallocate_person_raises_index_error_when_index_out_of_range(self):
+    def test_reallocate_person_raises_type_error_when_id_not_uuid(self):
         with self.assertRaises(IndexError):
-            self.amity.reallocate_person(self.amity.fellows[1], "hogwarts")
+            self.amity.reallocate_person(self.fellow.id, "hogwarts")
 
     def test_reallocate_person_returns_error_message_when_room_does_not_exist(self):
-        result = self.amity.reallocate_person("jane", "rift")
+        result = self.amity.reallocate_person(self.amity.fellows[0], "rift")
         self.assertEqual(result, self.amity.fellows[0])
 
     def test_reallocate_person_raises_attribute_error_with_non_person_object_ie_list(self):

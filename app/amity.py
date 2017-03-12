@@ -93,14 +93,28 @@ class Amity(object):
 
         return new_person
 
-    def allocate_room_to_person(self, person, room):
+    def allocate_room_to_person(self, person, room, reallocate=False):
         try:
             if (room.get_max_occupants() - room.num_of_occupants):
+                # Should not assign a living space to a staff member
                 if isinstance(person, Staff) and isinstance(room, LivingSpace):
                     return self.error_codes[10]
-                elif isinstance(room, Office):
+
+                if isinstance(person.allocated_office_space, Office) and not reallocate:
+                    # Person already has office space
+                    return "About to move %s from %s to %s" %(person.first_name,
+                                                              person.allocated_office_space.name, room.name)
+                if isinstance(room, Office):
+                    # Decrease number of people in previous office
+                    if isinstance(person.allocated_office_space, Office) and reallocate:
+                        person.allocated_office_space.num_of_occupants -= 1
+
                     person.allocated_office_space = room
-                else:
+                elif isinstance(room, LivingSpace):
+                    # Decrease number of people in previous Living Space
+                    if isinstance(person.allocated_living_space, LivingSpace) and reallocate:
+                        person.allocated_living_space.num_of_occupants -= 1
+
                     person.allocated_living_space = room
                 room.num_of_occupants += 1
             else:
@@ -113,6 +127,7 @@ class Amity(object):
 
 
     def reallocate_person(self, person_id, new_room_name):
+
         pass
 
     def load_people(self, filename):

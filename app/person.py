@@ -1,4 +1,5 @@
 import  uuid
+from app.room import Room
 
 
 class Person(object):
