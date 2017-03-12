@@ -6,9 +6,8 @@ from io import StringIO
 from unittest.mock import patch, MagicMock,Mock
 
 from app.amity import Amity
-from app.person import Person, Fellow, Staff
-from app.room import Room, LivingSpace, Office
-from .test_database import TestDataBase
+from app.person import Fellow, Staff
+from app.room import LivingSpace, Office
 
 
 class TestAmity(unittest.TestCase):
@@ -172,8 +171,9 @@ class TestAmity(unittest.TestCase):
         self.amity.allocate_room_to_person(
             self.fellow, self.living_space)
         self.assertEqual(1, self.living_space.num_of_occupants)
+        fellow2 = Fellow("Maria", "Jones")
         self.amity.allocate_room_to_person(
-            self.fellow, self.living_space)
+            fellow2, self.living_space)
         self.assertEqual(2, self.living_space.num_of_occupants)
 
     def test_allocate_office_adds_living_space_allocates_correct_office(self):
@@ -196,7 +196,7 @@ class TestAmity(unittest.TestCase):
     def test_allocate_office_increments_number_of_occupants_in_office(self):
         self.amity.allocate_room_to_person(self.fellow, self.office)
         self.assertEqual(1, self.office.num_of_occupants)
-        self.amity.allocate_room_to_person(self.fellow, self.office)
+        self.amity.allocate_room_to_person(self.staff, self.office)
         self.assertEqual(2, self.office.num_of_occupants)
 
     def test_allocate_room_returns_transfer_message_if_person_already_has_room(self):
@@ -206,39 +206,33 @@ class TestAmity(unittest.TestCase):
         self.assertEqual(result, "About to move %s from %s to %s" %(self.fellow.first_name,
                                                                     self.office.name, office2.name))
 
-    def test_allocate_person_causes_decrement_in_num_of_occupants_in_previous_room_if_person_previously_allocated(self):
+    def test_allocate_person_causes_decrement_in_num_of_occupants_in_office_space_if_staff_previously_allocated(self):
         office2 = Office("krypton")
         self.assertEqual(0, office2.num_of_occupants)
         self.assertEqual(0, self.office.num_of_occupants)
-        self.fellow.allocated_office_space = self.office
+        self.staff.allocated_office_space = self.office
         self.assertEqual(1, self.office.num_of_occupants)
-        self.amity.allocate_room_to_person(self.fellow, office2, True)
+
+        staff = self.amity.allocate_room_to_person(self.staff, office2, True)
+
         self.assertEqual(1, office2.num_of_occupants)
         self.assertEqual(0, self.office.num_of_occupants)
-        self.assertEqual(office2, self.fellow.allocated_office_space)
+        self.assertEqual(office2, self.staff.allocated_office_space)
+        self.assertEqual(office2, staff.allocated_office_space)
 
-    # Reallocate Room to Person Tests
-    # *******************************
+    def test_allocate_person_causes_decrement_in_num_of_occupants_in_living_space_if_fellow_previously_allocated(self):
+        living_space2 = LivingSpace("krypton")
+        self.assertEqual(0, living_space2.num_of_occupants)
+        self.assertEqual(0, self.living_space.num_of_occupants)
+        self.fellow.allocated_living_space = self.living_space
+        self.assertEqual(1, self.living_space.num_of_occupants)
 
-    def test_reallocate_person_raises_type_error_when_id_not_uuid(self):
-        with self.assertRaises(IndexError):
-            self.amity.reallocate_person(self.fellow.id, "hogwarts")
+        fellow = self.amity.allocate_room_to_person(self.fellow, living_space2, True)
 
-    def test_reallocate_person_returns_error_message_when_room_does_not_exist(self):
-        result = self.amity.reallocate_person(self.amity.fellows[0], "rift")
-        self.assertEqual(result, self.amity.fellows[0])
-
-    def test_reallocate_person_raises_attribute_error_with_non_person_object_ie_list(self):
-        with self.assertRaises(AttributeError):
-            self.amity.reallocate_person([], "hogwarts")
-
-    def test_reallocate_person_raises_type_error_with_non_integer_person_id_ie_string(self):
-        with self.assertRaises(AttributeError):
-            self.amity.reallocate_person("jane", "hogwarts")
-
-    def test_reallocate_person_raises_type_error_with_non_string_room_name(self):
-        with self.assertRaises(TypeError):
-            self.amity.reallocate_person(self.amity.fellows[0], 42)
+        self.assertEqual(1, living_space2.num_of_occupants)
+        self.assertEqual(0, self.living_space.num_of_occupants)
+        self.assertEqual(living_space2, self.fellow.allocated_living_space)
+        self.assertEqual(living_space2, fellow.allocated_living_space)
 
 
     # Load People Tests
@@ -442,7 +436,7 @@ class TestAmity(unittest.TestCase):
     def test_save_state_sqlite3_connect_success(self):
         sqlite3.connect = MagicMock(return_value='connection succeeded')
         result = self.amity.save_state("test_database")
-        sqlite3.connect.assert_called_with("test_database")
+        sqlite3.connect.assert_called_with(self.amity.database_directory + "test_database")
         print("Connection succeed: ", result)
         self.assertEqual(result, 'connection succeeded')
 

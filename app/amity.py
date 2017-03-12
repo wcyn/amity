@@ -106,10 +106,15 @@ class Amity(object):
                     person.allocated_living_space, LivingSpace)
                 already_allocated = already_allocated_living_space or already_allocated_office
 
-                if already_allocated and not reallocate:
-                    # Person already has office space or living space
-                    return "About to move %s from %s to %s" %(person.first_name,
-                                                              person.allocated_office_space.name, room.name)
+                if not reallocate:
+                    if already_allocated_office:
+                        # Person already has office space
+                        return "About to move %s from %s to %s" %(person.first_name,
+                                                                  person.allocated_office_space.name, room.name)
+                    elif already_allocated_living_space:
+                        # Person already has office space
+                        return "About to move %s from %s to %s" %(person.first_name,
+                                                              person.allocated_living_space.name, room.name)
 
                 if isinstance(room, Office):
                     person.allocated_office_space = room
@@ -122,11 +127,6 @@ class Amity(object):
         except Exception as e:
             raise e
         return person
-
-
-    def reallocate_person(self, person_id, new_room_name):
-
-        pass
 
     def load_people(self, filename):
         pass
