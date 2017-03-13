@@ -72,11 +72,10 @@ class Amity(object):
                 return self.error_codes[3] + " '%s'" % room_name
         return new_rooms
 
-    def add_person(self, first_name, last_name, type, wants_accommodation="n"):
+    def add_person(self, first_name, last_name, type, wants_accommodation=False):
         new_person = None
         try:
             if type.lower() in self.allowed_fellow_strings:
-                print("Fellow!")
                 new_person = Fellow(first_name, last_name)
                 self.fellows.append(new_person)
             elif type.lower() in self.allowed_staff_strings:
@@ -85,12 +84,10 @@ class Amity(object):
             else:
                 return self.error_codes[5] + " '%s'" % type
 
-            if wants_accommodation.lower() in self.allowed_yes_strings:
+            new_person.wants_accommodation = wants_accommodation
+            if wants_accommodation:
+                # Randomly assign available living space to fellow
                 pass
-            elif wants_accommodation.lower() in self.allowed_no_strings:
-                pass
-            else:
-                return self.error_codes[7] + " '%s'" % wants_accommodation
 
         except TypeError as e:
             raise (e)
@@ -160,7 +157,7 @@ class Amity(object):
             if not loaded_people:
                 # None of the lines had the required format
                 return self.error_codes[14] + " '%s'" % filename
-
+            return loaded_people
 
         except FileNotFoundError as e:
             return self.error_codes[12] + " '%s'" % filename
@@ -170,13 +167,74 @@ class Amity(object):
             raise e
 
     def print_allocations(self, filename=None):
-        print("Jane Staff Camelot")
-        print("Jake Fellow Occulus")
-        print("Jake Fellow Camelot")
-        pass
+        try:
+            staff = [' '.join((i.first_name, i.last_name, "Staff", i.allocated_office_space.name, '\n'))
+                     for i in self.staff if i.allocated_office_space]
+            fellows_allocated_both = [' '.join((i.first_name, i.last_name, "Fellow", i.allocated_office_space.name,
+                                 i.allocated_living_space.name, '\n'))
+                       for i in self.fellows if i.allocated_living_space and i.allocated_office_space]
+            fellows_with_only_living_space = [' '.join((i.first_name, i.last_name, "Fellow", "-",
+                                                        i.allocated_living_space.name, '\n'))
+                                              for i in self.fellows if
+                                              i.allocated_living_space and not i.allocated_office_space]
+            fellows_with_only_office_space = [' '.join((i.first_name, i.last_name, "Fellow",
+                                                        i.allocated_office_space.name, "-", '\n'))
+                                              for i in self.fellows if
+                                              not i.allocated_living_space and i.allocated_office_space]
+            fellows = fellows_allocated_both + fellows_with_only_living_space + fellows_with_only_office_space
+            allocations = staff + fellows
+            message = None
+            if not allocations:
+                message = "No allocations to print"
+
+
+            if filename:
+                if not isinstance(filename, str):
+                    raise TypeError
+                # Clean filename. Remove unwanted filename characters
+                filename = ''.join(x for x in filename if x not in "\/:*?<>|")
+                with open(filename, 'w') as f:
+                    f.writelines(allocations)
+            else:
+                for allocation in allocations:
+                    print(allocation.strip())
+            return {"filename": filename, "allocations": allocations, "message": message}
+        except Exception as e:
+            raise e
 
     def print_unallocated(self, filename=None):
-        pass
+        try:
+            staff = [' '.join((i.first_name, i.last_name, "Staff", '\n'))
+                     for i in self.staff if not i.allocated_office_space]
+            fellows_with_neither_allocations = [' '.join((i.first_name, i.last_name, "Fellow", '\n'))
+                       for i in self.fellows if not i.allocated_living_space and not i.allocated_office_space]
+            fellows_with_only_living_space = [' '.join((i.first_name, i.last_name, "Fellow", "-",
+                                                i.allocated_living_space.name, '\n'))
+                       for i in self.fellows if i.allocated_living_space and not i.allocated_office_space]
+            fellows_with_only_office_space = [' '.join((i.first_name, i.last_name, "Fellow",
+                                                        i.allocated_office_space.name, "-", '\n'))
+                       for i in self.fellows if not i.allocated_living_space and i.allocated_office_space
+                                              and i.wants_accommodation]
+            fellows = fellows_with_neither_allocations + fellows_with_only_living_space + fellows_with_only_office_space
+
+            unallocated = staff + fellows
+            message = None
+            if not unallocated:
+                message = "No unallocated to print"
+
+            if filename:
+                if not isinstance(filename, str):
+                    raise TypeError
+                # Clean filename. Remove unwanted filename characters
+                filename = ''.join(x for x in filename if x not in "\/:*?<>|")
+                with open(filename, 'w') as f:
+                    f.writelines(unallocated)
+            else:
+                for allocation in unallocated:
+                    print(allocation.strip())
+            return {"filename": filename, "unallocated": unallocated, "message": message}
+        except Exception as e:
+            raise e
 
     def print_room(self, room_name):
         pass
@@ -188,7 +246,7 @@ class Amity(object):
 
             db_file = self.database_directory + db_name
             db_path = Path(db_file)
-            if db_path.is_file():
+            if db_path.is_file() and not override:
                 return "About to override database '%s'" % db_name
 
             if not (self.offices + self.living_spaces  + self.fellows + self.staff):

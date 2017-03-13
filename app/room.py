@@ -14,7 +14,7 @@ class Room(object):
 
     @name.setter
     def name(self, name):
-        if name.islower() and name.istitle():
+        if name.islower() or name.istitle():
             self.__name = ''.join(name.split()).title()
         else:
             self.__name = ''.join(name.split())

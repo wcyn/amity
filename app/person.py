@@ -32,7 +32,7 @@ class Person(object):
 
     @first_name.setter
     def first_name(self, first_name):
-        if first_name.islower() and first_name.istitle():
+        if first_name.islower() or first_name.istitle():
             self.__first_name = ''.join(first_name.split()).title()
         else:
             self.__first_name = ''.join(first_name.split())
@@ -43,7 +43,7 @@ class Person(object):
 
     @last_name.setter
     def last_name(self, last_name):
-        if last_name.islower() and last_name.istitle():
+        if last_name.islower() or last_name.istitle():
             self.__last_name = ''.join(last_name.split()).title()
         else:
             self.__last_name = ''.join(last_name.split())

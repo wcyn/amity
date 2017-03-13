@@ -1,4 +1,0 @@
-Wrongly formatted
-File that should
-cause an error when loaded
-in Amity.
