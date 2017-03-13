@@ -3,6 +3,7 @@ import sqlite3
 import os
 
 from io import StringIO
+from pathlib import Path
 from unittest.mock import patch, MagicMock,Mock
 
 from app.amity import Amity
@@ -46,7 +47,7 @@ class TestAmity(unittest.TestCase):
         bee = self.amity.create_room(["bee-ls"])
         self.assertEqual(self.amity.living_spaces, [self.living_space] + bee)
         print(self.amity.living_spaces[1].__dict__)
-        self.assertEqual(self.amity.living_spaces[1].name, "bee")
+        self.assertEqual(self.amity.living_spaces[1].name, "Bee")
 
     def test_create_room_raises_type_error_with_non_string_room_names(self):
         with self.assertRaises(TypeError):
@@ -70,6 +71,7 @@ class TestAmity(unittest.TestCase):
     def test_create_room_does_not_add_duplicate_room_name(self):
         result = self.amity.create_room(["python"])
         self.assertEqual(self.amity.living_spaces, [self.living_space])
+        self.assertEqual(self.amity.offices, [self.office])
         self.assertEqual(self.amity.error_codes[3] + " 'python'", result)
 
     # Add Person tests
@@ -512,13 +514,19 @@ class TestAmity(unittest.TestCase):
         self.assertEqual(result, self.amity.error_codes[16] + ": 'hogwarts'")
 
     def test_print_room_prints_only_the_people_in_the_room_to_console(self):
-        Fellow("Vader")  # Unallocated
-        Staff("Malia")  # Unallocated
-        self.amity.allocate_room_to_person(self.living_space, self.fellow)
-        self.amity.allocate_room_to_person(self.office, self.fellow)
-        self.amity.allocate_room_to_person(self.office, self.staff)
-        office_occupants = "Jake Fellow\n" \
-                           "Jane Staff"
+        fellow = Fellow("Vader", "Surname")
+        staff = Staff("Malia", "Surname")
+        fellow.allocated_office_space, fellow.allocated_living_space = None, None
+        staff.allocated_office_space = None
+
+        self.amity.fellows.append(fellow)  # Unallocated
+        self.amity.staff.append(staff)  # Unallocated
+        self.fellow.allocated_living_space = self.living_space
+        self.fellow.allocated_office_space = self.office
+        self.staff.allocated_office_space = self.office
+
+        office_occupants = "Jake SurnameFellow\n" \
+                           "Jane Surname Staff"
         with patch('sys.stdout', new=StringIO()) as fakeOutput:
             self.amity.print_room("hogwarts")
             self.assertEqual(fakeOutput.getvalue().strip(), office_occupants)
@@ -535,9 +543,15 @@ class TestAmity(unittest.TestCase):
             self.amity.save_state(["hello"])
 
     def test_save_state_gives_asks_for_override_when_database_already_exists(self):
-        sqlite3.connect = MagicMock(return_value="Would you like to override the database" + " 'test_database'?")
-        result = self.amity.save_state("test_database")
-        self.assertEqual(result, "About to override database" + " 'test_database'")
+        database_name = "test_database"
+        # Create temporary database
+        db_file = self.amity.database_directory + database_name
+        res = sqlite3.connect(db_file)
+        print("res: ", res)
+        sqlite3.connect = MagicMock(return_value="Would you like to override the database" + " '%s'?" % database_name)
+        result = self.amity.save_state(database_name)
+        self.assertEqual(result, "About to override database" + " '%s'" % database_name)
+        # os.remove(self.amity.database_directory + database_name)
 
     def test_save_state_gives_informative_message_when_no_data_to_save(self):
         self.amity.offices = []
@@ -575,7 +589,7 @@ class TestAmity(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.amity.load_state(["hello"])
 
-    def test_load_state_gives_informative_message_when_no_database_is_empty(self):
+    def test_load_state_gives_informative_message_when_database_is_empty(self):
         self.amity.offices = []
         self.amity.living_spaces = []
         self.amity.fellows = []

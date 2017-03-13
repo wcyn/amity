@@ -51,9 +51,11 @@ class Amity(object):
             return self.error_codes[8]
         room_names = set(room_names)
         for room_name in room_names:
-            print("Room name: ", room_name)
-            if room_name not in ([x.name for x in self.living_spaces] +
-                                    [x.name for x in self.offices]):
+            if not isinstance(room_name, str):
+                raise TypeError
+
+            if room_name.lower() not in ([x.name.lower() for x in self.living_spaces] +
+                                    [x.name.lower() for x in self.offices]):
                 try:
                     if room_name[-3:] == "-ls":
                         new_living_space = LivingSpace(room_name[:-3])
