@@ -525,8 +525,8 @@ class TestAmity(unittest.TestCase):
         self.fellow.allocated_office_space = self.office
         self.staff.allocated_office_space = self.office
 
-        office_occupants = "Jake SurnameFellow\n" \
-                           "Jane Surname Staff"
+        office_occupants = "Jane Surname Staff\n" \
+                           "Jake Surname Fellow"
         with patch('sys.stdout', new=StringIO()) as fakeOutput:
             self.amity.print_room("hogwarts")
             self.assertEqual(fakeOutput.getvalue().strip(), office_occupants)

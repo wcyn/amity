@@ -17,6 +17,7 @@ class Amity(object):
     connection = None
     database_directory = "../databases/"
     files_directory = "../files/"
+
     allowed_fellow_strings = ["fellow", "f"]
     allowed_staff_strings = ["staff", "s"]
     allowed_office_strings = ["office", "o"]
@@ -76,6 +77,8 @@ class Amity(object):
 
     def add_person(self, first_name, last_name, type, wants_accommodation=False):
         new_person = None
+        if not isinstance(wants_accommodation, bool):
+            return self.error_codes[7] + " '%s'" % wants_accommodation
         try:
             if type.lower() in self.allowed_fellow_strings:
                 new_person = Fellow(first_name, last_name)
@@ -120,10 +123,12 @@ class Amity(object):
                         # Person already has office space
                         return "About to move %s from %s to %s" %(person.first_name,
                                                               person.allocated_living_space.name, room.name)
+
                 if isinstance(room, Office):
                     person.allocated_office_space = room
                 elif isinstance(room, LivingSpace):
                     person.allocated_living_space = room
+
             else:
                 return self.error_codes[11]
         except AttributeError as e:
@@ -239,7 +244,42 @@ class Amity(object):
             raise e
 
     def print_room(self, room_name):
-        pass
+        if not isinstance(room_name, str):
+            raise TypeError
+        rooms = [room for room in self.offices + self.living_spaces]
+        people = [person for person in  self.fellows + self.staff]
+        # allocated_rooms = [person.allocated_office_space + pers for person in people]
+        room_name = room_name.lower()
+        people_count = 0
+        if rooms:
+            if room_name in [room.name.lower() for room in rooms]:
+                for staff in self.staff:
+                    if staff.allocated_office_space:
+                        if room_name == staff.allocated_office_space.name.lower():
+                            print("%s %s %s" % (staff.first_name, staff.last_name, "Staff"))
+                            people_count += 1
+                for fellow in self.fellows:
+                    if fellow.allocated_office_space:
+                        if room_name == fellow.allocated_office_space.name.lower():
+                            print("%s %s %s" % (fellow.first_name, fellow.last_name, "Fellow"))
+                            people_count += 1
+                    elif fellow.allocated_living_space:
+                        if room_name == fellow.allocated_living_space.name.lower():
+                            print("%s %s %s" % (fellow.first_name, fellow.last_name, "Fellow"))
+                            people_count += 1
+
+                if not people_count:
+                    # Room is empty
+                    return self.error_codes[16] + ": '%s'" %room_name
+            else:
+                # Room does not exist
+                return self.error_codes[1] + ": '%s'" % room_name
+        else:
+            return "There are no rooms yet"
+
+        return people_count
+        
+
 
     def save_state(self, db_name="sqlite_database", override=False):
         try:
