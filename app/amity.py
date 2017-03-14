@@ -110,7 +110,6 @@ class Amity(object):
             print(e)
             raise (e)
 
-
     def allocate_room_to_person(self, person, room, reallocate=False):
         try:
             if room.get_max_occupants() - room.num_of_occupants:
@@ -145,6 +144,29 @@ class Amity(object):
             raise e
         except Exception as e:
             raise e
+
+    def randomly_allocate_room(self, person, room_type):
+        if room_type not in self.allowed_living_space_strings + self.allowed_office_strings:
+            return self.error_codes[6] + " '%s'" % room_type
+
+        offices_not_full = [office for office in self.offices if office.get_max_occupants() - office.num_of_occupants]
+        living_spaces_not_full = [living_space for living_space in self.living_spaces
+                                  if living_space.get_max_occupants() - living_space.num_of_occupants]
+
+        data = None
+        if room_type in self.allowed_office_strings:
+            if offices_not_full:
+                # Randomly select an non full office
+                office = random.choice(offices_not_full)
+                self.allocate_room_to_person(person, office)
+                data = office
+        else:
+            if living_spaces_not_full:
+                # Randomly select a non full living space
+                living_space = random.choice(living_spaces_not_full)
+                self.allocate_room_to_person(person, living_space)
+                data = living_space
+        return data
 
     def load_people(self, filename):
         try:
@@ -251,28 +273,6 @@ class Amity(object):
             return {"filename": filename, "unallocated": unallocated, "message": message}
         except Exception as e:
             raise e
-
-    def randomly_allocate_room(self, person, room_type):
-        if room_type not in self.allowed_living_space_strings + self.allowed_office_strings:
-            return self.error_codes[6] + " '%s'" % room_type
-        offices_not_full = [office for office in self.offices if office.get_max_occupants() - office.num_of_occupants]
-        living_spaces_not_full = [living_space for living_space in self.living_spaces
-                                  if living_space.get_max_occupants() - living_space.num_of_occupants]
-
-        data = None
-        if room_type in self.allowed_office_strings:
-            if offices_not_full:
-                # Randomly select an non full office
-                office = random.choice(offices_not_full)
-                self.allocate_room_to_person(person, office)
-                data = office
-        else:
-            if living_spaces_not_full:
-                # Randomly select a non full living space
-                living_space = random.choice(living_spaces_not_full)
-                self.allocate_room_to_person(person, living_space)
-                data = living_space
-        return data
 
 
     def print_room(self, room_name):

@@ -237,6 +237,28 @@ class TestAmity(unittest.TestCase):
         self.assertEqual(living_space2, fellow.allocated_living_space)
 
 
+    # Randomly Allocate Room Tests
+    # *****************************
+
+    def test_randomly_allocate_room_returns_error_message_if_room_type_is_invalid(self):
+        self.assertEqual(self.amity.error_codes[6] + " 'mansion'",
+                         self.amity.randomly_allocate_room(self.fellow, "mansion"))
+
+    def test_randomly_allocate_room_assigns_correct_room_type(self):
+        ls_result = self.amity.randomly_allocate_room(self.fellow, "ls")
+        o_result = self.amity.randomly_allocate_room(self.fellow, "o")
+        self.assertIsInstance(ls_result, LivingSpace)
+        self.assertIsInstance(o_result, Office)
+        self.assertEqual(ls_result, self.fellow.allocated_living_space)
+        self.assertEqual(o_result, self.fellow.allocated_office_space)
+
+    def test_randomly_allocate_room_does_not_assign_full_room(self):
+        self.office.num_of_occupants = self.office.max_occupants
+        o_result = self.amity.randomly_allocate_room(self.fellow, "o")
+        self.assertEqual(o_result, None)
+        self.assertEqual(self.fellow.allocated_office_space, None)
+
+
     # Load People Tests
     # *****************************
 
