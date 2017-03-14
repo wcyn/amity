@@ -1,10 +1,12 @@
 import re
 import sys
 import sqlite3
+import random
 
 from app.room import Office, LivingSpace
 from app.person import Staff, Fellow
 from pathlib import Path
+
 
 
 class Amity(object):
@@ -76,10 +78,10 @@ class Amity(object):
         return new_rooms
 
     def add_person(self, first_name, last_name, type, wants_accommodation=False):
-        new_person = None
         if not isinstance(wants_accommodation, bool):
             return self.error_codes[7] + " '%s'" % wants_accommodation
         try:
+            new_person = None
             if type.lower() in self.allowed_fellow_strings:
                 new_person = Fellow(first_name, last_name)
                 self.fellows.append(new_person)
@@ -89,10 +91,18 @@ class Amity(object):
             else:
                 return self.error_codes[5] + " '%s'" % type
 
+            # Randomly allocate office to new person
+            self.randomly_allocate_room(new_person, self.allowed_office_strings[0])
+
             new_person.wants_accommodation = wants_accommodation
             if wants_accommodation:
                 # Randomly assign available living space to fellow
-                pass
+                result = self.randomly_allocate_room(new_person, self.allowed_living_space_strings[0])
+                if result:
+                    # Reset wants accommodation to False since they now have accommodation
+                    new_person.wants_accommodation = False
+
+            return new_person
 
         except TypeError as e:
             raise (e)
@@ -100,11 +110,10 @@ class Amity(object):
             print(e)
             raise (e)
 
-        return new_person
 
     def allocate_room_to_person(self, person, room, reallocate=False):
         try:
-            if (room.get_max_occupants() - room.num_of_occupants):
+            if room.get_max_occupants() - room.num_of_occupants:
                 # Should not assign a living space to a staff member
                 if isinstance(person, Staff) and isinstance(room, LivingSpace):
                     return self.error_codes[10]
@@ -122,7 +131,7 @@ class Amity(object):
                     elif already_allocated_living_space:
                         # Person already has office space
                         return "About to move %s from %s to %s" %(person.first_name,
-                                                              person.allocated_living_space.name, room.name)
+                                                                  person.allocated_living_space.name, room.name)
 
                 if isinstance(room, Office):
                     person.allocated_office_space = room
@@ -131,11 +140,11 @@ class Amity(object):
 
             else:
                 return self.error_codes[11]
+            return person
         except AttributeError as e:
             raise e
         except Exception as e:
             raise e
-        return person
 
     def load_people(self, filename):
         try:
@@ -243,11 +252,33 @@ class Amity(object):
         except Exception as e:
             raise e
 
+    def randomly_allocate_room(self, person, room_type):
+        if room_type not in self.allowed_living_space_strings + self.allowed_office_strings:
+            return self.error_codes[6] + " '%s'" % room_type
+        offices_not_full = [office for office in self.offices if office.get_max_occupants() - office.num_of_occupants]
+        living_spaces_not_full = [living_space for living_space in self.living_spaces
+                                  if living_space.get_max_occupants() - living_space.num_of_occupants]
+
+        data = None
+        if room_type in self.allowed_office_strings:
+            if offices_not_full:
+                # Randomly select an non full office
+                office = random.choice(offices_not_full)
+                self.allocate_room_to_person(person, office)
+                data = office
+        else:
+            if living_spaces_not_full:
+                # Randomly select a non full living space
+                living_space = random.choice(living_spaces_not_full)
+                self.allocate_room_to_person(person, living_space)
+                data = living_space
+        return data
+
+
     def print_room(self, room_name):
         if not isinstance(room_name, str):
             raise TypeError
         rooms = [room for room in self.offices + self.living_spaces]
-        people = [person for person in  self.fellows + self.staff]
         # allocated_rooms = [person.allocated_office_space + pers for person in people]
         room_name = room_name.lower()
         people_count = 0
