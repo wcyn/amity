@@ -322,17 +322,22 @@ class Amity(object):
             if db_path.is_file() and not override:
                 return "About to override database '%s'" % db_name
 
-            if not (self.offices + self.living_spaces  + self.fellows + self.staff):
+            if not self.offices + self.living_spaces  + self.fellows + self.staff:
                 return "No data to save"
 
+            print("Connecting now..")
             self.connection = sqlite3.connect(db_file)
-            return "connection succeeded"
+            # if self.connection.fetchone():
+            #     return "connection succeeded"
+            # else:
+            #     return "connection failed"
+            return self.connection
         except Exception as e:
             print("Error: ", e)
             raise(e)
         finally:
             print("Conn: ", self.connection)
-        pass
+            # return self.connection
 
     def load_state(self, db_name):
         pass
