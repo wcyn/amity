@@ -66,10 +66,9 @@ class Person(object):
         elif office_space:
             # Office space is not None
             # Cannot assign Non-Office instance to allocated_office_space
-            print("Cannot assign Non-Office instance to allocated_office_space")
+            print("Cannot assign non-offices instance to allocated_office_space")
         else:
             self.__allocated_office_space = office_space
-
 
 class Staff(Person):
 
