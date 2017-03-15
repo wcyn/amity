@@ -1,16 +1,16 @@
 import  uuid
-from app.room import Office, LivingSpace
+from room import Office, LivingSpace
 
 
 class Person(object):
     def __init__(self, first_name, last_name, **kwargs):
         # If not defined, id is None
         self.id = kwargs.pop('id', str(uuid.uuid4()))
+        # If not defined, allocated_office_space is None
         self.allocated_office_space = kwargs.pop('allocated_office_space',
                                                  None)
         self.first_name = first_name
         self.last_name = last_name
-        # If not defined, allocated_office_space is None
 
     # Override the __new__() method
     def __new__(cls, *args, **kwargs):
@@ -67,8 +67,9 @@ class Person(object):
             # Office space is not None
             # Cannot assign Non-Office instance to allocated_office_space
             print("Cannot assign non-offices instance to allocated_office_space")
+            self.__allocated_office_space = None
         else:
-            self.__allocated_office_space = office_space
+            self.__allocated_office_space = None
 
 class Staff(Person):
 
@@ -83,7 +84,7 @@ class Fellow(Person):
         # Default is None
         self.allocated_living_space = kwargs.pop('allocated_living_space',
          None)
-        # Default is 'N', meaning No
+        # Default is False, meaning No
         self.wants_accommodation = kwargs.pop('wants_accommodation', False)
 
     @property
@@ -112,4 +113,8 @@ class Fellow(Person):
 
     @wants_accommodation.setter
     def wants_accommodation(self, wants_accommodation):
-        self.__wants_accommodation = wants_accommodation
+        if wants_accommodation:
+            self.__wants_accommodation = True
+        else:
+            self.__wants_accommodation = False
+

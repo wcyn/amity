@@ -3,8 +3,8 @@ import sys
 import sqlite3
 import random
 
-from app.room import Office, LivingSpace
-from app.person import Staff, Fellow
+from room import Office, LivingSpace
+from person import Staff, Fellow
 from pathlib import Path
 
 
@@ -26,7 +26,7 @@ class Amity(object):
     allowed_fellow_strings = ["fellow", "f"]
     allowed_staff_strings = ["staff", "s"]
     allowed_office_strings = ["office", "o"]
-    allowed_living_space_strings = ["living_space", "ls"]
+    allowed_living_space_strings = ["living_space", "ls", "living-space"]
     allowed_yes_strings= ["yes", "y"]
     allowed_no_strings = ["no", "n"]
     error_codes = {
@@ -191,7 +191,7 @@ class Amity(object):
                         fellow = Fellow(person_data[0], person_data[1])
                         self.fellows.append(fellow)
                         loaded_people.append(fellow)
-                    else:
+                    elif person_data[2].lower() in self.allowed_staff_strings:
                         staff = Staff(person_data[0], person_data[1])
                         self.staff.append(staff)
                         loaded_people.append(staff)
@@ -357,18 +357,22 @@ class Amity(object):
                   ''')
 
                 # Save data to database
-                cursor.executemany("INSERT OR REPLACE INTO rooms (name, type) values (?, ?)",
-                                   self.tuplize_room_data(self.get_all_rooms()))
-                cursor.executemany("INSERT OR REPLACE INTO people (uuid, first_name, last_name, role,"
-                                   "allocated_office_space, allocated_living_space, wants_accommodation) "
-                                   "values (?, ?, ?, ?, ?, ?, ?)",
-                                   self.tuplize_fellow_data(self.fellows))
-                cursor.executemany("INSERT OR REPLACE INTO people (uuid, first_name, last_name, role,"
-                                   "allocated_office_space, allocated_living_space, wants_accommodation) "
-                                   "values (?, ?, ?, ?, ?, ?, ?)",
-                                   self.tuplize_staff_data(self.staff))
+                if self.get_all_rooms():
+                    cursor.executemany("INSERT OR REPLACE INTO rooms (name, type) values (?, ?)",
+                                       self.tuplize_room_data(self.get_all_rooms()))
+                if self.fellows:
+                    cursor.executemany("INSERT OR REPLACE INTO people (uuid, first_name, last_name, role,"
+                                       "allocated_office_space, allocated_living_space, wants_accommodation) "
+                                       "values (?, ?, ?, ?, ?, ?, ?)",
+                                       self.tuplize_fellow_data(self.fellows))
+                if self.staff:
+                    cursor.executemany("INSERT OR REPLACE INTO people (uuid, first_name, last_name, role,"
+                                       "allocated_office_space, allocated_living_space, wants_accommodation) "
+                                       "values (?, ?, ?, ?, ?, ?, ?)",
+                                       self.tuplize_staff_data(self.staff))
 
                 self.connection.commit()
+                self.connection.close()
             else:
                 print("Data not saved")
 
@@ -421,11 +425,55 @@ class Amity(object):
                 cursor.execute("SELECT * FROM rooms")
                 rooms = cursor.fetchall()
                 print("Rooms: ", rooms)
-                return {"people": people, "rooms": rooms}
+                people_objects = self.add_people_database_data_to_amity(people)
+                room_objects = self.add_room_database_data_to_amity(rooms)
 
+                self.connection.close()
+                print("Finished loading!!")
+                return {"people": people_objects, "rooms": room_objects}
         except Exception as e:
             raise e
 
+    def add_people_database_data_to_amity(self, people_list):
+        loaded_people = []
+        for person in people_list:
+            print("\n\n\n ##### person in people list: ", person)
+            print("\n\n")
+            if person[3].lower() in self.allowed_fellow_strings:
+                fellow = Fellow(person[1], person[2], id=person[0],
+                                allocated_office_space=self.get_room_object_from_name(person[4]),
+                                allocated_living_space=self.get_room_object_from_name(person[5]),
+                                wants_accommodation=True if person[6] else False )
+                self.fellows.append(fellow)
+                loaded_people.append(fellow)
+            elif person[3].lower in self.allowed_staff_strings:
+                staff = Staff(person[0], person[1])
+                self.staff.append(staff)
+                loaded_people.append(staff)
+        return loaded_people
+
+    def add_room_database_data_to_amity(self, room_list):
+        loaded_rooms = []
+        print("Room list:", room_list)
+        for room in room_list:
+            if room[1].lower() in self.allowed_office_strings:
+                office = Office(room[0])
+                self.offices.append(office)
+                loaded_rooms.append(office)
+            elif room[1].lower() in self.allowed_living_space_strings:
+                living_space = LivingSpace(room[0])
+                self.living_spaces.append(living_space)
+                loaded_rooms.append(living_space)
+        return loaded_rooms
+
+    def get_room_object_from_name(self, name):
+        print("\nAll rooms:", self.get_all_rooms())
+        if name:
+            room = [room for room in self.get_all_rooms() if room.name.lower()==name.lower()]
+            print("\n ** Room object fro room name? ", room)
+            if room:
+                return room
+        return None
 
     def get_all_rooms(self):
         return self.offices + self.living_spaces
@@ -457,12 +505,14 @@ class Amity(object):
         tuple_list = []
         for room in room_list:
             tuple_list.append((room.name,"office" if isinstance(room, Office) else "living-space"))
-        return tuple_list\
+        return tuple_list
 
     @staticmethod
     def tuplize_fellow_data(fellows_list):
         tuple_list = []
         for fellow in fellows_list:
+            print("\n\n &&& Tupleize: ", fellow.__dict__)
+            print("\n\n\n")
             if fellow.allocated_office_space:
                 allocated_office_space = fellow.allocated_office_space.name
             else:
@@ -476,7 +526,7 @@ class Amity(object):
                 fellow.id,
                 fellow.first_name,
                 fellow.last_name,
-                "staff" if isinstance(fellow, Staff) else "fellow",
+                "fellow",
                 allocated_office_space,
                 allocated_living_space,
                 1 if fellow.wants_accommodation else 0
@@ -520,12 +570,20 @@ people_list = amity.load_people("test_people.txt")
 rooms = ["gates", "page", "jobs"]
 amity.offices = [office]
 amity.living_spaces = [living_space]
-amity.fellows = [fellow]
+julie = Fellow("Julie", "Surname2")
+amity.fellows = [fellow, julie]
 amity.staff = [staff]
 #
 # print(amity.tuplize_room_data(amity.offices + amity.living_spaces))
 # print(amity.tuplize_fellow_data(amity.fellows))
 # print(amity.tuplize_staff_data(amity.staff))
 # print(fellow.wants_accommodation)
+# print(amity.load_state("amity"))
+# # jake = [f for f in amity.fellows if f.id=="ea9a11ba-ae4e-4bb4-926d-9849743e8e69"][0]
+# amity.allocate_room_to_person(julie, office)
+# julie.allocated_office_space = office
+# print("\n\n %% Julie! OS", julie.__dict__)
+# print("\n\n %% Jake LS! ", julie.allocated_living_space)
 # amity.save_state("amity", True)
-amity.load_state("amity")
+# print([p.__dict__ for p in amity.fellows + amity.staff])
+# print([r.__dict__ for r in amity.get_all_rooms()])
