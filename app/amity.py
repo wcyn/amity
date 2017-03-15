@@ -2,6 +2,7 @@ import re
 import sys
 import sqlite3
 import random
+import os
 
 from app.room import Office, LivingSpace
 from app.person import Staff, Fellow
@@ -12,13 +13,15 @@ from pathlib import Path
 class Amity(object):
     """ """
     out = sys.stdout
-    offices = None  # List of Office objects
-    living_spaces = None  # List of LivingSpace objects
-    fellows = None  # List of Fellow objects
-    staff = None  # List of Staff objects
+    offices = []  # List of Office objects
+    living_spaces = []  # List of LivingSpace objects
+    fellows = []  # List of Fellow objects
+    staff = []  # List of Staff objects
     connection = None
-    database_directory = "../databases/"
-    files_directory = "../files/"
+    database_directory = '../databases/'
+    files_directory = '../files/'
+    default_db_name = '*amity_database'
+    empty_db = "*amity_empty"
 
     allowed_fellow_strings = ["fellow", "f"]
     allowed_staff_strings = ["staff", "s"]
@@ -43,7 +46,8 @@ class Amity(object):
         14: "Wrongly formatted file",
         15: "Invalid characters in the filename",
         16: "The room is empty",
-        17: "Invalid character(s) in the database name"
+        17: "Invalid character(s) in the database name",
+        18: "Non-existent database"
     }
 
     def create_room(self, room_names):
@@ -172,6 +176,8 @@ class Amity(object):
         try:
             with open(filename) as f:
                 people = f.readlines()
+            print("\n\n @@@ Loaded people and read lines")
+            print(people)
             if not len(" ".join([i.strip() for i in people])):
                 return self.error_codes[13] + " '%s'" % filename
 
@@ -312,33 +318,81 @@ class Amity(object):
         
 
 
-    def save_state(self, db_name="sqlite_database", override=False):
+    def save_state(self, database_name=None, override=False):
         try:
-            if set('[~!@#$%^&*()+{}"/\\:;\']+$').intersection(db_name):
-                return self.error_codes[17] + " '%s'" % db_name
+            if database_name:
+                if set('[~!@#$%^&*()+{}"/\\:;\']+$').intersection(database_name):
+                    return self.error_codes[17] + " '%s'" % database_name
+            else:
+                database_name = self.default_db_name
 
-            db_file = self.database_directory + db_name
+            db_file = self.database_directory + database_name
             db_path = Path(db_file)
-            if db_path.is_file() and not override:
-                return "About to override database '%s'" % db_name
+
+
 
             if not self.offices + self.living_spaces  + self.fellows + self.staff:
                 return "No data to save"
+            if db_path.is_file() and not override:
+                return "About to override database '%s'" % database_name
 
-            print("Connecting now..")
             self.connection = sqlite3.connect(db_file)
+            print("Connected on save")
             # if self.connection.fetchone():
             #     return "connection succeeded"
             # else:
             #     return "connection failed"
+
             return self.connection
         except Exception as e:
             print("Error: ", e)
             raise(e)
         finally:
             print("Conn: ", self.connection)
+
             # return self.connection
 
-    def load_state(self, db_name):
-        pass
+    def load_state(self, database_name=None):
+        try:
+            if database_name:
+                if set('[~!@#$%^&*()+{}"/\\:;\']+$').intersection(database_name) and \
+                                database_name.split('/')[-1] != self.empty_db:
+                    return self.error_codes[17] + " '%s'" % database_name
+            else:
+                database_name = self.default_db_name
+                print("Database default: ", database_name)
 
+            # database_name
+            db_path = Path(database_name)
+            print("DB path from load state: ", db_path)
+            if not db_path.is_file():
+                print("DB NON EXISTENT: ", db_file)
+                return self.error_codes[18] + " '%s'" % database_name
+            else:
+                print("DB EXISTS: ", db_file)
+
+
+            self.connection = sqlite3.connect(db_file)
+            print("Conn self: ", self.connection)
+            if isinstance(self.connection, sqlite3.Connection):
+                cursor = self.connection.cursor()
+                # Check if database is empty
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='%s';" % database_name)
+                data = cursor.fetchall()
+                print("SQLITE DATA: ", data)
+                if data:
+                    print("Data!")
+                else:
+                    print("Empty DB")
+                    return "No data to Load. Empty database '%s'" % database_name
+
+        except Exception as e:
+            raise e
+
+db_file = "../databases/*amity_empty"
+# connection = sqlite3.connect(db_file)
+# print("Connection obj", connection)
+# a = Amity()
+# a.fellows += [Fellow("Gav", "Surname")]
+# print(a.save_state(None, True))
+# print(Amity().load_state(db_file))

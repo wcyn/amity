@@ -299,7 +299,9 @@ class TestAmity(unittest.TestCase):
         os.remove(filename) # Finally remove the file
 
     def test_load_people_loads_people_into_amity_data_variables(self):
-        self.amity.load_people("test_people.in")
+        filename = "test_people.in"
+        self.amity.load_people("files/" + filename)
+        print("\n\n **** Amity fellows: ",  self.amity.fellows)
         self.assertEqual(5, len(self.amity.fellows))
         self.assertEqual(4, len(self.amity.staff))
         for i in self.amity.fellows:
@@ -330,7 +332,7 @@ class TestAmity(unittest.TestCase):
 
 
     def test_print_allocations_gives_message_when_no_data_to_print(self):
-        result = self.amity.print_allocations("test_nairobi:.txt")
+        result = self.amity.print_allocations("test_allocations.txt")
         self.assertEqual(result['message'], "No allocations to print")
 
     def test_print_allocations_ignores_invalid_characters_in_filename(self):
@@ -423,20 +425,22 @@ class TestAmity(unittest.TestCase):
             self.amity.print_allocations(["hello"])
 
     def test_print_unallocated_ignores_invalid_characters_in_filename(self):
+        filename = "test_nairobi.txt"
         result = self.amity.print_allocations("test_nairobi:.txt")
-        self.assertEqual(result['filename'], "test_nairobi.txt")
+        self.assertEqual(result['filename'], filename)
         result = self.amity.print_allocations("test_nairobi*.txt")
-        self.assertEqual(result['filename'], "test_nairobi.txt")
+        self.assertEqual(result['filename'], filename)
         result = self.amity.print_allocations("test_nairobi?.txt")
-        self.assertEqual(result['filename'], "test_nairobi.txt")
+        self.assertEqual(result['filename'], filename)
         result = self.amity.print_allocations("test_nairobi<.txt")
-        self.assertEqual(result['filename'], "test_nairobi.txt")
+        self.assertEqual(result['filename'], filename)
         result = self.amity.print_allocations("test_nairobi>.txt")
-        self.assertEqual(result['filename'], "test_nairobi.txt")
+        self.assertEqual(result['filename'], filename)
         result = self.amity.print_allocations("test_nairobi/.txt")
-        self.assertEqual(result['filename'], "test_nairobi.txt")
+        self.assertEqual(result['filename'], filename)
         result = self.amity.print_allocations("test_nairobi\.txt")
-        self.assertEqual(result['filename'], "test_nairobi.txt")
+        self.assertEqual(result['filename'], filename)
+        os.remove(filename)
 
     def test_print_unallocated_prints_only_unallocated_people_to_file(self):
         fellow = Fellow("Vader", "Surname")
@@ -590,12 +594,12 @@ class TestAmity(unittest.TestCase):
         self.assertEqual(result, "No data to save")
 
     def test_save_state_sqlite3_connect_success(self):
-        db_name = "test_database_success"
+        database_name = "test_database_success"
         sqlite3.connect = MagicMock(return_value='connection succeeded')
-        result = self.amity.save_state(db_name)
+        result = self.amity.save_state(database_name)
 
         print("Connection succeed: ", result)
-        sqlite3.connect.assert_called_with(self.amity.database_directory + db_name)
+        sqlite3.connect.assert_called_with(self.amity.database_directory + database_name)
         self.assertEqual(result, 'connection succeeded')
 
     def test_save_state_sqlite3_connect_fail_on_invalid_characters(self):
@@ -617,15 +621,20 @@ class TestAmity(unittest.TestCase):
             self.amity.load_state(["hello"])
 
     def test_load_state_gives_informative_message_when_database_is_empty(self):
-        self.amity.offices = []
-        self.amity.living_spaces = []
-        self.amity.fellows = []
-        self.amity.staff = []
-        self.people_list = []
 
-        sqlite3.connect = MagicMock(return_value="No data to Load. Empty database 'test_database'")
-        result = self.amity.load_state("test_database")
-        self.assertEqual(result, "No data to Load. Empty database 'test_database'")
+        database_name = self.amity.empty_db
+        sqlite3.connect = MagicMock(return_value="No data to Load. Empty database '%s'" % database_name)
+        result = self.amity.load_state("databases/" + database_name)
+
+        print("result from test: ", result)
+        print("Amity connection: ",self.amity.connection)
+        self.assertEqual(self.amity.connection, "No data to Load. Empty database '%s'" % database_name)
+
+    def test_load_state_gives_informative_message_when_database_does_not_exist(self):
+        database_name = "test_load_state_not_exist"
+        sqlite3.connect = MagicMock(return_value=self.amity.error_codes[18] + " '%s'" % database_name)
+        result = self.amity.load_state(database_name)
+        self.assertEqual(result, self.amity.error_codes[18] + " '%s'" % database_name)
 
     def test_load_state_sqlite3_connect_fail_on_invalid_characters(self):
         sqlite3.connect = MagicMock(return_value='connection failed')
@@ -633,7 +642,6 @@ class TestAmity(unittest.TestCase):
         self.assertEqual(result, self.amity.error_codes[17] + " 'test_database/'")
         result = self.amity.load_state('test_database*')
         self.assertEqual(result, self.amity.error_codes[17] + " 'test_database*'")
-
 
 if __name__ == '__main__':
     unittest.main()
