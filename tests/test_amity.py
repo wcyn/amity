@@ -624,7 +624,7 @@ class TestAmity(unittest.TestCase):
 
         database_name = self.amity.empty_db
         sqlite3.connect = MagicMock(return_value="No data to Load. Empty database '%s'" % database_name)
-        result = self.amity.load_state("databases/" + database_name)
+        self.amity.load_state("databases/" + database_name)
 
         self.assertEqual(self.amity.connection, "No data to Load. Empty database '%s'" % database_name)
 
