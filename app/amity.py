@@ -2,7 +2,6 @@ import re
 import sys
 import sqlite3
 import random
-import os
 
 from app.room import Office, LivingSpace
 from app.person import Staff, Fellow
@@ -248,17 +247,16 @@ class Amity(object):
 
     def print_unallocated(self, filename=None):
         try:
-            staff = [' '.join((i.first_name, i.last_name, "Staff", '\n'))
-                     for i in self.staff if not i.allocated_office_space]
-            fellows_with_neither_allocations = [' '.join((i.first_name, i.last_name, "Fellow", '\n'))
-                       for i in self.fellows if not i.allocated_living_space and not i.allocated_office_space]
-            fellows_with_only_living_space = [' '.join((i.first_name, i.last_name, "Fellow", "-",
-                                                i.allocated_living_space.name, '\n'))
-                       for i in self.fellows if i.allocated_living_space and not i.allocated_office_space]
-            fellows_with_only_office_space = [' '.join((i.first_name, i.last_name, "Fellow",
-                                                        i.allocated_office_space.name, "-", '\n'))
-                       for i in self.fellows if not i.allocated_living_space and i.allocated_office_space
-                                              and i.wants_accommodation]
+            staff = [' '.join((staff.first_name, staff.last_name, "Staff", '\n'))
+                     for staff in self.get_unallocated_staff()]
+            fellows_with_neither_allocations = [' '.join((fellow.first_name, fellow.last_name, "Fellow", '\n'))
+                       for fellow in self.get_fellows_with_no_allocation()]
+            fellows_with_only_living_space = [' '.join((fellow.first_name, fellow.last_name, "Fellow", "-",
+                                                fellow.allocated_living_space.name, '\n'))
+                                                for fellow in self.get_fellows_with_living_space_only()]
+            fellows_with_only_office_space = [' '.join((fellow.first_name, fellow.last_name, "Fellow",
+                                                        fellow.allocated_office_space.name, "-", '\n'))
+                                                 for fellow in self.get_fellows_with_office_space_only()]
             fellows = fellows_with_neither_allocations + fellows_with_only_living_space + fellows_with_only_office_space
 
             unallocated = staff + fellows
@@ -284,7 +282,7 @@ class Amity(object):
     def print_room(self, room_name):
         if not isinstance(room_name, str):
             raise TypeError
-        rooms = [room for room in self.offices + self.living_spaces]
+        rooms = self.get_all_rooms()
         # allocated_rooms = [person.allocated_office_space + pers for person in people]
         room_name = room_name.lower()
         people_count = 0
@@ -328,29 +326,55 @@ class Amity(object):
 
             db_file = self.database_directory + database_name
             db_path = Path(db_file)
-
-
+            print("Function running?")
 
             if not self.offices + self.living_spaces  + self.fellows + self.staff:
                 return "No data to save"
+
             if db_path.is_file() and not override:
                 return "About to override database '%s'" % database_name
 
             self.connection = sqlite3.connect(db_file)
-            print("Connected on save")
-            # if self.connection.fetchone():
-            #     return "connection succeeded"
-            # else:
-            #     return "connection failed"
+            if isinstance(self.connection, sqlite3.Connection):
+                cursor = self.connection.cursor()
+                cursor.execute(''' DROP TABLE IF EXISTS rooms ''')
+                cursor.execute(''' DROP TABLE IF EXISTS people ''')
+                cursor.execute('''
+                    CREATE TABLE rooms
+                    (name varchar(50) PRIMARY KEY,
+                    type varchar(15))
+                      ''')
+                cursor.execute('''
+                    CREATE TABLE people
+                    (uuid varchar(36) PRIMARY KEY,
+                    first_name varchar(50) NOT NULL,
+                    last_name varchar(50) NOT NULL,
+                    role varchar(50),
+                    allocated_office_space varchar(50),
+                    allocated_living_space varchar(50),
+                    wants_accommodation INTEGER DEFAULT 0)
+                  ''')
 
-            return self.connection
+                # Save data to database
+                cursor.executemany("INSERT INTO rooms (name, type) values (?, ?)",
+                                   self.tuplize_room_data(self.get_all_rooms()))
+                cursor.executemany("INSERT INTO people (uuid, first_name, last_name, role,"
+                                   "allocated_office_space, allocated_living_space, wants_accommodation) "
+                                   "values (?, ?, ?, ?, ?, ?, ?)",
+                                   self.tuplize_fellow_data(self.fellows))
+                cursor.executemany("INSERT INTO people (uuid, first_name, last_name, role,"
+                                   "allocated_office_space, allocated_living_space, wants_accommodation) "
+                                   "values (?, ?, ?, ?, ?, ?, ?)",
+                                   self.tuplize_staff_data(self.staff))
+
+                self.connection.commit()
+            else:
+                print("Data not saved")
+
         except Exception as e:
             print("Error: ", e)
             raise(e)
-        finally:
-            print("Conn: ", self.connection)
 
-            # return self.connection
 
     def load_state(self, database_name=None):
         try:
@@ -364,17 +388,15 @@ class Amity(object):
 
             # database_name
             db_path = Path(database_name)
-            print("DB path from load state: ", db_path)
             if not db_path.is_file():
                 print("DB NON EXISTENT: ", db_file)
                 return self.error_codes[18] + " '%s'" % database_name
             else:
                 print("DB EXISTS: ", db_file)
 
-
             self.connection = sqlite3.connect(db_file)
-            print("Conn self: ", self.connection)
             if isinstance(self.connection, sqlite3.Connection):
+                print("Loading data from the database...")
                 cursor = self.connection.cursor()
                 # Check if database is empty
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='%s';" % database_name)
@@ -385,6 +407,83 @@ class Amity(object):
         except Exception as e:
             raise e
 
+    def get_all_rooms(self):
+        return self.offices + self.living_spaces
+
+    def fetch_all_people(self):
+        return self.staff + self.fellows
+
+    def get_allocated_staff(self):
+        return [staff for staff in self.staff if staff.allocated_office_space]
+
+    def get_unallocated_staff(self):
+        return [staff for staff in self.staff if not staff.allocated_office_space]
+
+    def get_fellows_with_no_allocation(self):
+        return [fellow for fellow in self.fellows
+                if not fellow.allocated_living_space and not fellow.allocated_office_space]
+
+    def get_fellows_with_office_space_only(self):
+        return [fellow for fellow in self.fellows if fellow.allocated_office_space \
+                and not fellow.allocated_living_space \
+                and fellow.wants_accommodation]
+
+    def get_fellows_with_living_space_only(self):
+        return [fellow for fellow in self.fellows if fellow.allocated_living_space \
+                and not fellow.allocated_office_space]
+
+    @staticmethod
+    def tuplize_room_data(room_list):
+        tuple_list = []
+        for room in room_list:
+            tuple_list.append((room.name,"office" if isinstance(room, Office) else "living-space"))
+        return tuple_list\
+
+    @staticmethod
+    def tuplize_fellow_data(fellows_list):
+        tuple_list = []
+        for fellow in fellows_list:
+            if fellow.allocated_office_space:
+                allocated_office_space = fellow.allocated_office_space.name
+            else:
+                allocated_office_space = None
+
+            if fellow.allocated_living_space:
+                allocated_living_space = fellow.allocated_living_space.name
+            else:
+                allocated_living_space = None
+            tuple_list.append((
+                fellow.id,
+                fellow.first_name,
+                fellow.last_name,
+                "staff" if isinstance(fellow, Staff) else "fellow",
+                allocated_office_space,
+                allocated_living_space,
+                1 if fellow.wants_accommodation else 0
+            ))
+        return tuple_list
+
+    @staticmethod
+    def tuplize_staff_data(staff_list):
+        tuple_list = []
+        for staff in staff_list:
+            if staff.allocated_office_space:
+                allocated_office_space = staff.allocated_office_space.name
+            else:
+                allocated_office_space = None
+
+            tuple_list.append((
+                staff.id,
+                staff.first_name,
+                staff.last_name,
+                "staff",
+                allocated_office_space,
+                None,
+                0
+            ))
+        return tuple_list
+
+
 db_file = "../databases/*amity_empty"
 # connection = sqlite3.connect(db_file)
 # print("Connection obj", connection)
@@ -392,3 +491,20 @@ db_file = "../databases/*amity_empty"
 # a.fellows += [Fellow("Gav", "Surname")]
 # print(a.save_state(None, True))
 # print(Amity().load_state(db_file))
+# amity = Amity()
+# office = Office("hogwarts")
+# living_space = LivingSpace("python")
+# staff = Staff("jane", "surname")
+# fellow = Fellow("jake", "surname")
+# people_list = amity.load_people("test_people.txt")
+# rooms = ["gates", "page", "jobs"]
+# amity.offices = [office]
+# amity.living_spaces = [living_space]
+# amity.fellows = [fellow]
+# amity.staff = [staff]
+#
+# print(amity.tuplize_room_data(amity.offices + amity.living_spaces))
+# print(amity.tuplize_fellow_data(amity.fellows))
+# print(amity.tuplize_staff_data(amity.staff))
+# print(fellow.wants_accommodation)
+# amity.save_state(None, True)

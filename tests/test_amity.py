@@ -4,7 +4,7 @@ import os
 
 from io import StringIO
 from pathlib import Path
-from unittest.mock import patch, MagicMock,Mock
+from unittest.mock import patch, MagicMock
 
 from app.amity import Amity
 from app.person import Fellow, Staff
@@ -472,6 +472,7 @@ class TestAmity(unittest.TestCase):
         staff = Staff("Malia", "Surname")
         fellow.allocated_office_space, fellow.allocated_living_space = None, None
         fellow2.allocated_office_space, fellow2.allocated_living_space = self.office, None
+        fellow2.wants_accommodation = True
         fellow3.allocated_office_space, fellow3.allocated_living_space = None, self.living_space
         staff.allocated_office_space = None
 
@@ -505,6 +506,7 @@ class TestAmity(unittest.TestCase):
         staff = Staff("Malia", "Surname")
         fellow.allocated_office_space, fellow.allocated_living_space = None, None
         fellow2.allocated_office_space, fellow2.allocated_living_space = self.office, None
+        fellow2.wants_accommodation = True
         fellow3.allocated_office_space, fellow3.allocated_living_space = None, self.living_space
         staff.allocated_office_space = None
 
@@ -575,8 +577,8 @@ class TestAmity(unittest.TestCase):
         res = sqlite3.connect(db_file)
         print("\n\n %%%% res: ", res)
         sqlite3.connect = MagicMock(return_value="About to override database '%s'" % database_name)
-        result = self.amity.save_state(database_name)
-        self.assertEqual(result, "About to override database" + " '%s'" % database_name)
+        self.amity.save_state(database_name)
+        self.assertEqual(self.amity.connection, "About to override database" + " '%s'" % database_name)
         db_path = Path(db_file)
         if db_path.is_file():
             os.remove(self.amity.database_directory + database_name)
@@ -596,11 +598,10 @@ class TestAmity(unittest.TestCase):
     def test_save_state_sqlite3_connect_success(self):
         database_name = "test_database_success"
         sqlite3.connect = MagicMock(return_value='connection succeeded')
-        result = self.amity.save_state(database_name)
+        self.amity.save_state(database_name)
 
-        print("Connection succeed: ", result)
         sqlite3.connect.assert_called_with(self.amity.database_directory + database_name)
-        self.assertEqual(result, 'connection succeeded')
+        self.assertEqual(self.amity.connection, 'connection succeeded')
 
     def test_save_state_sqlite3_connect_fail_on_invalid_characters(self):
         sqlite3.connect = MagicMock(return_value='connection failed')

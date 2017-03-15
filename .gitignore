@@ -93,3 +93,4 @@ amity.sublime-project
 amity.sublime-workspace
 .idea/
 .DS_Store
+/databases/*amity_database

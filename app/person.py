@@ -5,7 +5,7 @@ from app.room import Office, LivingSpace
 class Person(object):
     def __init__(self, first_name, last_name, **kwargs):
         # If not defined, id is None
-        self.id = kwargs.pop('id', uuid.uuid4())
+        self.id = kwargs.pop('id', str(uuid.uuid4()))
         self.allocated_office_space = kwargs.pop('allocated_office_space',
                                                  None)
         self.first_name = first_name
@@ -84,7 +84,7 @@ class Fellow(Person):
         self.allocated_living_space = kwargs.pop('allocated_living_space',
          None)
         # Default is 'N', meaning No
-        self.wants_accommodation = kwargs.pop('wants_accommodation', 'N')
+        self.wants_accommodation = kwargs.pop('wants_accommodation', False)
 
     @property
     def allocated_living_space(self):
