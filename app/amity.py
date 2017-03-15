@@ -20,7 +20,8 @@ class Amity(object):
     database_directory = '../databases/'
     files_directory = '../files/'
     default_db_name = '*amity_database'
-    empty_db = "*amity_empty"
+    empty_database = "*amity_empty"
+    special_databases = [default_db_name, empty_database]
 
     allowed_fellow_strings = ["fellow", "f"]
     allowed_staff_strings = ["staff", "s"]
@@ -337,15 +338,15 @@ class Amity(object):
             self.connection = sqlite3.connect(db_file)
             if isinstance(self.connection, sqlite3.Connection):
                 cursor = self.connection.cursor()
-                cursor.execute(''' DROP TABLE IF EXISTS rooms ''')
-                cursor.execute(''' DROP TABLE IF EXISTS people ''')
+                # cursor.execute(''' DROP TABLE IF EXISTS rooms ''')
+                # cursor.execute(''' DROP TABLE IF EXISTS people ''')
                 cursor.execute('''
-                    CREATE TABLE rooms
+                    CREATE TABLE IF NOT EXISTS rooms
                     (name varchar(50) PRIMARY KEY,
                     type varchar(15))
                       ''')
                 cursor.execute('''
-                    CREATE TABLE people
+                    CREATE TABLE IF NOT EXISTS people
                     (uuid varchar(36) PRIMARY KEY,
                     first_name varchar(50) NOT NULL,
                     last_name varchar(50) NOT NULL,
@@ -356,13 +357,13 @@ class Amity(object):
                   ''')
 
                 # Save data to database
-                cursor.executemany("INSERT INTO rooms (name, type) values (?, ?)",
+                cursor.executemany("INSERT OR REPLACE INTO rooms (name, type) values (?, ?)",
                                    self.tuplize_room_data(self.get_all_rooms()))
-                cursor.executemany("INSERT INTO people (uuid, first_name, last_name, role,"
+                cursor.executemany("INSERT OR REPLACE INTO people (uuid, first_name, last_name, role,"
                                    "allocated_office_space, allocated_living_space, wants_accommodation) "
                                    "values (?, ?, ?, ?, ?, ?, ?)",
                                    self.tuplize_fellow_data(self.fellows))
-                cursor.executemany("INSERT INTO people (uuid, first_name, last_name, role,"
+                cursor.executemany("INSERT OR REPLACE INTO people (uuid, first_name, last_name, role,"
                                    "allocated_office_space, allocated_living_space, wants_accommodation) "
                                    "values (?, ?, ?, ?, ?, ?, ?)",
                                    self.tuplize_staff_data(self.staff))
@@ -376,36 +377,55 @@ class Amity(object):
             raise(e)
 
 
-    def load_state(self, database_name=None):
+    def load_state(self, database_name=None, path=None):
         try:
             if database_name:
+                print("FUnctioning?")
+                print("dbname: ", database_name)
                 if set('[~!@#$%^&*()+{}"/\\:;\']+$').intersection(database_name) and \
-                                database_name.split('/')[-1] != self.empty_db:
+                                database_name not in self.special_databases:
                     return self.error_codes[17] + " '%s'" % database_name
             else:
                 database_name = self.default_db_name
                 print("Database default: ", database_name)
 
-            # database_name
-            db_path = Path(database_name)
+            if path:
+                database_file_path = path + database_name
+            else:
+                database_file_path = self.database_directory + database_name
+
+            db_path = Path(database_file_path)
+
             if not db_path.is_file():
-                print("DB NON EXISTENT: ", db_file)
+                print("DB NON EXISTENT: ", database_name)
                 return self.error_codes[18] + " '%s'" % database_name
             else:
-                print("DB EXISTS: ", db_file)
+                print("DATABASE EXISTS: ", database_name)
 
-            self.connection = sqlite3.connect(db_file)
+            self.connection = sqlite3.connect(database_file_path)
             if isinstance(self.connection, sqlite3.Connection):
                 print("Loading data from the database...")
                 cursor = self.connection.cursor()
                 # Check if database is empty
-                cursor.execute("SELECT name FROM sqlite_master WHERE type='%s';" % database_name)
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='people';")
                 data = cursor.fetchall()
+                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='rooms';")
+                data += cursor.fetchall()
+                print("Data!!: " , data)
                 if not data:
+                    print("NO data")
                     return "No data to Load. Empty database '%s'" % database_name
+                cursor.execute("SELECT * FROM people")
+                people = cursor.fetchall()
+                print("People: ", people)
+                cursor.execute("SELECT * FROM rooms")
+                rooms = cursor.fetchall()
+                print("Rooms: ", rooms)
+                return {"people": people, "rooms": rooms}
 
         except Exception as e:
             raise e
+
 
     def get_all_rooms(self):
         return self.offices + self.living_spaces
@@ -484,27 +504,28 @@ class Amity(object):
         return tuple_list
 
 
-db_file = "../databases/*amity_empty"
+# db_file = "../databases/*amity_empty"
 # connection = sqlite3.connect(db_file)
 # print("Connection obj", connection)
-# a = Amity()
-# a.fellows += [Fellow("Gav", "Surname")]
+a = Amity()
+a.fellows += [Fellow("Gav", "Surname")]
 # print(a.save_state(None, True))
 # print(Amity().load_state(db_file))
-# amity = Amity()
-# office = Office("hogwarts")
-# living_space = LivingSpace("python")
-# staff = Staff("jane", "surname")
-# fellow = Fellow("jake", "surname")
-# people_list = amity.load_people("test_people.txt")
-# rooms = ["gates", "page", "jobs"]
-# amity.offices = [office]
-# amity.living_spaces = [living_space]
-# amity.fellows = [fellow]
-# amity.staff = [staff]
+amity = Amity()
+office = Office("hogwarts")
+living_space = LivingSpace("python")
+staff = Staff("janet", "surname")
+fellow = Fellow("jake", "surname", id="0201acc6-a550-4d57-aa8d-989b4ade8500")
+people_list = amity.load_people("test_people.txt")
+rooms = ["gates", "page", "jobs"]
+amity.offices = [office]
+amity.living_spaces = [living_space]
+amity.fellows = [fellow]
+amity.staff = [staff]
 #
 # print(amity.tuplize_room_data(amity.offices + amity.living_spaces))
 # print(amity.tuplize_fellow_data(amity.fellows))
 # print(amity.tuplize_staff_data(amity.staff))
 # print(fellow.wants_accommodation)
-# amity.save_state(None, True)
+# amity.save_state("amity", True)
+amity.load_state("amity")
