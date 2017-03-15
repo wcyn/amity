@@ -379,11 +379,7 @@ class Amity(object):
                 # Check if database is empty
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='%s';" % database_name)
                 data = cursor.fetchall()
-                print("SQLITE DATA: ", data)
-                if data:
-                    print("Data!")
-                else:
-                    print("Empty DB")
+                if not data:
                     return "No data to Load. Empty database '%s'" % database_name
 
         except Exception as e:

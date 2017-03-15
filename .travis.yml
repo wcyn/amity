@@ -10,6 +10,7 @@ branches:
   only:
     - develop
     - tests
+    - features
 script:
 - nosetests --with-coverage
 after_success: coveralls
