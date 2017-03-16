@@ -174,16 +174,19 @@ class AmityInteractive(cmd.Cmd):
         wants_accommodation = True if wants_accommodation in amity.allowed_yes_strings else False
 
         new_person = amity.add_person(first_name, last_name, role, wants_accommodation)
-        if isinstance(new_person, str):
-            print(new_person)
+        if not isinstance(new_person, str):
+            if isinstance(new_person, str):
+                print(new_person)
 
-        if isinstance(new_person, Staff):
-            person_data = amity.translate_staff_data_to_dict([new_person])
+            if isinstance(new_person, Staff):
+                person_data = amity.translate_staff_data_to_dict([new_person])
+            else:
+                person_data = amity.translate_fellow_data_to_dict([new_person])
+
+            print_subtitle("Newly Added Person")
+            pretty_print_data(person_data)
         else:
-            person_data = amity.translate_fellow_data_to_dict([new_person])
-
-        print_subtitle("Newly Added Person")
-        pretty_print_data(person_data)
+            print(new_person)
 
     @docopt_cmd
     def do_reallocate_person(self, args):
@@ -201,13 +204,37 @@ class AmityInteractive(cmd.Cmd):
             print_info("A room with the name '%s' does not exist" % (new_room_name))
         if person and room:
             reallocation = amity.allocate_room_to_person(person, new_room_name, True)
-            if isinstance(person, Staff):
-                person_data = amity.translate_staff_data_to_dict([person])
-            else:
-                person_data = amity.translate_fellow_data_to_dict([person])
+            if not isinstance(reallocation, str):
+                if isinstance(person, Staff):
+                    person_data = amity.translate_staff_data_to_dict([person])
+                else:
+                    person_data = amity.translate_fellow_data_to_dict([person])
 
-            print_subtitle("Reallocated Person")
-            pretty_print_data(person_data)
+                print_subtitle("Reallocated Person")
+                pretty_print_data(person_data)
+            else:
+                print(reallocation)
+
+    @docopt_cmd
+    def do_load_people(self, args):
+        """
+        Adds people to rooms from a txt file.
+        Usage: load_people <filename>
+        """
+        loaded_people = amity.load_people(args['<filename>'])
+        if isinstance(loaded_people, str):
+            print(loaded_people)
+        else:
+            fellows = [fellow for fellow in loaded_people if isinstance(fellow, Fellow)]
+            staff = [staff for staff in loaded_people if isinstance(staff, Staff)]
+            fellow_data = amity.translate_fellow_data_to_dict(fellows)
+
+            staff_data = amity.translate_staff_data_to_dict(staff)
+
+            print_subtitle("Newly Created People from File")
+            pretty_print_data(fellow_data + staff_data)
+
+
 
     def do_quit(self, args):
         """ Quits Amity """

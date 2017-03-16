@@ -186,8 +186,6 @@ class Amity(object):
         try:
             with open(filename) as f:
                 people = f.readlines()
-            print("\n\n @@@ Loaded people and read lines")
-            print(people)
             if not len(" ".join([i.strip() for i in people])):
                 return self.return_error_for_printing(self.error_codes[13] + " '%s'" % filename)
 
@@ -198,11 +196,11 @@ class Amity(object):
                     # proceed to create the objects else ignore the bad line
                     person_data = i.strip().split()
                     if person_data[2].lower() in self.allowed_fellow_strings:
-                        fellow = Fellow(person_data[0], person_data[1])
+                        fellow = self.add_person(person_data[0], person_data[1], self.allowed_fellow_strings[0])
                         self.fellows.append(fellow)
                         loaded_people.append(fellow)
                     elif person_data[2].lower() in self.allowed_staff_strings:
-                        staff = Staff(person_data[0], person_data[1])
+                        staff = self.add_person(person_data[0], person_data[1], self.allowed_staff_strings[0])
                         self.staff.append(staff)
                         loaded_people.append(staff)
                 else:
