@@ -185,6 +185,29 @@ class AmityInteractive(cmd.Cmd):
         print_subtitle("Newly Added Person")
         pretty_print_data(person_data)
 
+    @docopt_cmd
+    def do_reallocate_person(self, args):
+        """
+        Reallocate the person with  person_identifier  to  <new_room_name>
+        Usage: reallocate_person <person_identifier> <new_room_name>
+        """
+        person_id = args['<person_identifier>']
+        new_room_name = args['<new_room_name>']
+        person = amity.get_person_object_from_id(person_id)
+        room = amity.get_room_object_from_name(new_room_name)
+        if not person:
+            print_info("Person with the ID '%s' does not exist" % (person_id))
+        if not room:
+            print_info("A room with the name '%s' does not exist" % (new_room_name))
+        if person and room:
+            reallocation = amity.allocate_room_to_person(person, new_room_name, True)
+            if isinstance(person, Staff):
+                person_data = amity.translate_staff_data_to_dict([person])
+            else:
+                person_data = amity.translate_fellow_data_to_dict([person])
+
+            print_subtitle("Reallocated Person")
+            pretty_print_data(person_data)
 
     def do_quit(self, args):
         """ Quits Amity """

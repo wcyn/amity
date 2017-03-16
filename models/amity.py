@@ -489,12 +489,17 @@ class Amity(object):
         return loaded_rooms
 
     def get_room_object_from_name(self, name):
-        print("\nAll rooms:", self.get_all_rooms())
         if name:
             room = [room for room in self.get_all_rooms() if room.name.lower()==name.lower()]
-            print("\n ** Room object fro room name? ", room)
             if room:
                 return room
+        return None
+
+    def get_person_object_from_id(self, id):
+        if id:
+            person = [person for person in self.get_all_people() if person.id==id]
+            if person:
+                return person
         return None
 
     def get_all_rooms(self):
@@ -533,8 +538,6 @@ class Amity(object):
     def tuplize_fellow_data(fellows_list):
         tuple_list = []
         for fellow in fellows_list:
-            print("\n\n &&& Tuplize felllow: ", fellow.__dict__)
-            print("\n\n\n")
             if fellow.allocated_office_space:
                 allocated_office_space = fellow.allocated_office_space.name
             else:
@@ -559,7 +562,6 @@ class Amity(object):
     def tuplize_staff_data(staff_list):
         tuple_list = []
         for staff in staff_list:
-            print("Tuplize staff: ", staff.__dict__)
             if staff.allocated_office_space:
                 allocated_office_space = staff.allocated_office_space.name
             else:
@@ -634,9 +636,9 @@ amity.living_spaces = [living_space]
 julie = Fellow("Julie", "Surname2")
 # amity.fellows = [fellow, julie]
 # amity.staff = [staff]
-
-amity.add_person("MAria", "Najai", "f", True)
-amity.add_person("Ben", "Maro", "s", True)
+#
+# amity.add_person("MAria", "Najai", "f", True)
+# amity.add_person("Ben", "Maro", "s", True)
 
 
 # print(amity.tuplize_room_data(amity.offices + amity.living_spaces))
