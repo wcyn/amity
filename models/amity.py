@@ -87,7 +87,7 @@ class Amity(object):
         try:
             new_person = None
             if type.lower() in self.allowed_fellow_strings:
-                new_person = Fellow(first_name, last_name, id=3742)
+                new_person = Fellow(first_name, last_name)
                 new_person.wants_accommodation = wants_accommodation
                 self.fellows.append(new_person)
             elif type.lower() in self.allowed_staff_strings:
@@ -587,6 +587,7 @@ class Amity(object):
                 fellow['_Person__allocated_office_space'] = fellow['_Person__allocated_office_space'].name
             if fellow['_Fellow__allocated_living_space']:
                 fellow['_Fellow__allocated_living_space'] = fellow['_Fellow__allocated_living_space'].name
+            fellow['role'] = "fellow"
         return fellow_dict_list
 
     @staticmethod
@@ -595,10 +596,24 @@ class Amity(object):
         for staff in staff_dict_list:
             if staff['_Person__allocated_office_space']:
                 staff['_Person__allocated_office_space'] = staff['_Person__allocated_office_space'].name
-            # In order to match with the fellows (for table printing)
+            # In order to match with the fellows (for table printing).
             staff['_Fellow__allocated_living_space'] = None
             staff['_Fellow__wants_accommodation'] = False
+            staff['role'] = "staff"
         return staff_dict_list
+
+    @staticmethod
+    def translate_room_data_to_dict(office_list, living_space_list):
+
+        office_dict_list = [office.__dict__ for office in office_list]
+        living_space_dict_list = [living_space.__dict__ for living_space in living_space_list]
+        for office in office_dict_list:
+            office['type'] = "office"
+        for living_space in living_space_dict_list:
+            living_space['type'] = "living-space"
+
+
+        return office_dict_list + living_space_dict_list
 
 
 # db_file = "../databases/*amity_empty"
@@ -624,21 +639,21 @@ julie = Fellow("Julie", "Surname2")
 amity.add_person("MAria", "Najai", "f", True)
 amity.add_person("Ben", "Maro", "s", True)
 
+
 # print(amity.tuplize_room_data(amity.offices + amity.living_spaces))
 # print(amity.tuplize_fellow_data(amity.fellows))
 # print(amity.tuplize_staff_data(amity.staff))
 # print(fellow.wants_accommodation)
-print(amity.load_state("amity"))
+# print(amity.load_state("amity"))
 # # jake = [f for f in amity.fellows if f.id=="ea9a11ba-ae4e-4bb4-926d-9849743e8e69"][0]
-amity.allocate_room_to_person(julie, office)
-julie.allocated_office_space = office
+# amity.allocate_room_to_person(julie, office)
+# julie.allocated_office_space = office
 # print("\n\n %% Julie! OS", julie.__dict__)
 # print("\n\n %% Jake LS! ", julie.allocated_living_space)
-amity.save_state("amity", True)
+# amity.save_state("amity", True)
 # print([p.__dict__ for p in amity.fellows + amity.staff])
 # print([r.__dict__ for r in amity.get_all_rooms()])
 
 
 # print("\n\n ^^^^ people:", [fellow.__dict__ for fellow in amity.get_all_people()])
 
-# pretty_print_data(fellow_data_to_dict(amity.fellows) + staff_data_to_dict(amity.staff))
