@@ -6,6 +6,7 @@ import random
 from .room import Office, LivingSpace
 from .person import Staff, Fellow
 from pathlib import Path
+from termcolor import colored
 
 
 
@@ -55,17 +56,20 @@ class Amity(object):
         if not isinstance(room_names, list):
             return "Only a list of strings is allowed"
         if not len(room_names):
-            return self.error_codes[8]
+            return self.return_error_for_printing(self.error_codes[8])
+
         room_names = set(room_names)
         for room_name in room_names:
             if not isinstance(room_name, str):
                 raise TypeError
-
-            if room_name.lower() not in ([x.name.lower() for x in self.living_spaces] +
-                                    [x.name.lower() for x in self.offices]):
+            room_type = "office"
+            if room_name[-3:] == "-ls":
+                room_name = room_name[:-3]
+                room_type = "living-space"
+            if room_name.lower() not in ([room.name.lower() for room in self.get_all_rooms()]):
                 try:
-                    if room_name[-3:] == "-ls":
-                        new_living_space = LivingSpace(room_name[:-3])
+                    if room_type in self.allowed_living_space_strings:
+                        new_living_space = LivingSpace(room_name)
                         self.living_spaces.append(new_living_space)
                         new_rooms.append(new_living_space)
                     else:
@@ -78,12 +82,12 @@ class Amity(object):
                     print(e)
                     raise(e)
             else:
-                return self.error_codes[3] + " '%s'" % room_name
+                return self.return_error_for_printing(self.error_codes[3] + " '%s'" % room_name)
         return new_rooms
 
     def add_person(self, first_name, last_name, type, wants_accommodation=False):
         if not isinstance(wants_accommodation, bool):
-            return self.error_codes[7] + " '%s'" % wants_accommodation
+            return self.return_error_for_printing(self.error_codes[7] + " '%s'" % wants_accommodation)
         try:
             new_person = None
             if type.lower() in self.allowed_fellow_strings:
@@ -94,7 +98,7 @@ class Amity(object):
                 new_person = Staff(first_name, last_name)
                 self.staff.append(new_person)
             else:
-                return self.error_codes[5] + " '%s'" % type
+                return self.return_error_for_printing(self.error_codes[5] + " '%s'" % type)
 
             # Randomly allocate office to new person
             self.randomly_allocate_room(new_person, self.allowed_office_strings[0])
@@ -142,7 +146,7 @@ class Amity(object):
                     person.allocated_living_space = room
 
             else:
-                return self.error_codes[11]
+                return self.return_error_for_printing(self.error_codes[11])
             return person
         except AttributeError as e:
             raise e
@@ -151,7 +155,7 @@ class Amity(object):
 
     def randomly_allocate_room(self, person, room_type):
         if room_type not in self.allowed_living_space_strings + self.allowed_office_strings:
-            return self.error_codes[6] + " '%s'" % room_type
+            return self.return_error_for_printing(self.error_codes[6] + " '%s'" % room_type)
 
         offices_not_full = [office for office in self.offices if office.get_max_occupants() - office.num_of_occupants]
         living_spaces_not_full = [living_space for living_space in self.living_spaces
@@ -179,7 +183,7 @@ class Amity(object):
             print("\n\n @@@ Loaded people and read lines")
             print(people)
             if not len(" ".join([i.strip() for i in people])):
-                return self.error_codes[13] + " '%s'" % filename
+                return self.return_error_for_printing(self.error_codes[13] + " '%s'" % filename)
 
             loaded_people = []
             for i in people:
@@ -200,11 +204,11 @@ class Amity(object):
 
             if not loaded_people:
                 # None of the lines had the required format
-                return self.error_codes[14] + " '%s'" % filename
+                return self.return_error_for_printing(self.error_codes[14] + " '%s'" % filename)
             return loaded_people
 
         except FileNotFoundError as e:
-            return self.error_codes[12] + " '%s'" % filename
+            return self.return_error_for_printing(self.error_codes[12] + " '%s'" % filename)
         except TypeError as e:
             raise TypeError
         except Exception as e:
@@ -306,10 +310,10 @@ class Amity(object):
 
                 if not people_count:
                     # Room is empty
-                    return self.error_codes[16] + ": '%s'" %room_name
+                    return self.return_error_for_printing(self.error_codes[16] + ": '%s'" %room_name)
             else:
                 # Room does not exist
-                return self.error_codes[1] + ": '%s'" % room_name
+                return self.return_error_for_printing(self.error_codes[1] + ": '%s'" % room_name)
         else:
             return "There are no rooms yet"
 
@@ -321,19 +325,18 @@ class Amity(object):
         try:
             if database_name:
                 if set('[~!@#$%^&*()+{}"/\\:;\']+$').intersection(database_name):
-                    return self.error_codes[17] + " '%s'" % database_name
+                    return self.return_error_for_printing(self.error_codes[17] + " '%s'" % database_name)
             else:
                 database_name = self.default_db_name
 
             db_file = self.database_directory + database_name
             db_path = Path(db_file)
-            print("Function running?")
 
             if not self.offices + self.living_spaces  + self.fellows + self.staff:
-                return "No data to save"
+                return self.return_error_for_printing("No data to save")
 
             if db_path.is_file() and not override:
-                return "About to override database '%s'" % database_name
+                return self.return_error_for_printing("About to override database '%s'" % database_name)
 
             self.connection = sqlite3.connect(db_file)
             if isinstance(self.connection, sqlite3.Connection):
@@ -388,10 +391,9 @@ class Amity(object):
                 print("dbname: ", database_name)
                 if set('[~!@#$%^&*()+{}"/\\:;\']+$').intersection(database_name) and \
                                 database_name not in self.special_databases:
-                    return self.error_codes[17] + " '%s'" % database_name
+                    return self.return_error_for_printing(self.error_codes[17] + " '%s'" % database_name)
             else:
                 database_name = self.default_db_name
-                print("Database default: ", database_name)
 
             if path:
                 database_file_path = path + database_name
@@ -401,8 +403,7 @@ class Amity(object):
             db_path = Path(database_file_path)
 
             if not db_path.is_file():
-                print("DB NON EXISTENT: ", database_name)
-                return self.error_codes[18] + " '%s'" % database_name
+                return self.return_error_for_printing(self.error_codes[18] + " '%s'" % database_name)
             else:
                 print("DATABASE EXISTS: ", database_name)
 
@@ -415,21 +416,16 @@ class Amity(object):
                 data = cursor.fetchall()
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='rooms';")
                 data += cursor.fetchall()
-                print("Data!!: " , data)
                 if not data:
-                    print("NO data")
-                    return "No data to Load. Empty database '%s'" % database_name
+                    return self.return_error_for_printing("No data to Load. Empty database '%s'" % database_name)
                 cursor.execute("SELECT * FROM people")
                 people = cursor.fetchall()
-                print("People: ", people)
                 cursor.execute("SELECT * FROM rooms")
                 rooms = cursor.fetchall()
-                print("Rooms: ", rooms)
                 people_objects = self.add_people_database_data_to_amity(people)
                 room_objects = self.add_room_database_data_to_amity(rooms)
 
                 self.connection.close()
-                print("Finished loading!!")
                 return {"people": people_objects, "rooms": room_objects}
         except Exception as e:
             raise e
@@ -437,13 +433,10 @@ class Amity(object):
     def add_people_database_data_to_amity(self, people_list):
         loaded_people = []
         for person in people_list:
-            print("\n\n\n ##### person in people list: ", person)
-            print("\n\n")
             if person[3].lower() in self.allowed_fellow_strings:
                 if person[0] in [person.id for person in self.fellows]:
                     # get fellow with similar id and apply values
                     fellow = [p for p in self.get_all_people() if p.id == person[0]][0]
-                    print("Similar fellow!: ",  fellow.__dict__)
                     fellow.id = person[0]
                     fellow.first_name = person[1]
                     fellow.last_name = person[2]
@@ -459,12 +452,10 @@ class Amity(object):
                     # Only append new fellow
                     self.fellows.append(fellow)
                     loaded_people.append(fellow)
-                    print("final Fellow: ", fellow.__dict__)
             elif person[3].lower() in self.allowed_staff_strings:
                 if person[0] in [person.id for person in self.fellows]:
                     # get staff with similar id and apply values
                     staff = [p for p in self.get_all_people() if p.id == person[0]][0]
-                    print("Similar Staff!", staff.__dict__)
                     staff.id = person[0]
                     staff.first_name = person[1]
                     staff.last_name = person[2]
@@ -604,7 +595,6 @@ class Amity(object):
 
     @staticmethod
     def translate_room_data_to_dict(office_list, living_space_list):
-
         office_dict_list = [office.__dict__ for office in office_list]
         living_space_dict_list = [living_space.__dict__ for living_space in living_space_list]
         for office in office_dict_list:
@@ -613,6 +603,10 @@ class Amity(object):
             living_space['type'] = "living-space"
 
         return office_dict_list + living_space_dict_list
+
+    @staticmethod
+    def return_error_for_printing(text):
+        return colored("\n%s\n%s\n%s" % ("-" * len(text), text, "-" * len(text)), 'magenta')
 
 
 # db_file = "../databases/*amity_empty"

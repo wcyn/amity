@@ -55,6 +55,8 @@ from docopt import docopt, DocoptExit
 from terminaltables import AsciiTable
 
 from models.amity import Amity
+from models.room import Office, LivingSpace
+from models.person import Staff, Fellow
 
 def docopt_cmd(func):
     """
@@ -89,21 +91,25 @@ def print_header():
     cprint(figlet_format('AMITY', font='colossal'), 'blue')
     cprint('-' * 52, 'blue')
     cprint("%sA ROOM ALLOCATION SYSTEM." % (" " * 14), 'cyan')
-    # cprint("\nType 'help' to see the list of available commands\n", 'grey')
 
 
 def pretty_print_data(list_of_dicts):
-    key_list = [colored(key.title().split('__')[-1], 'magenta')  for key in list_of_dicts[0].keys()]
-    table_rows = [key_list]
-    d = {}
-    for object in list_of_dicts:
-        row_data = []
-        for key, value in object.items():
-            row_data.append(colored(value, 'blue'))
-        table_rows.append(row_data)
-    table = AsciiTable(table_rows)
-    cprint(table.table, 'magenta')
+    if list_of_dicts:
+        key_list = [colored(key.title().split('__')[-1], 'green')  for key in list_of_dicts[0].keys()]
+        table_rows = [key_list]
 
+        for object in list_of_dicts:
+            row_data = []
+            for key, value in object.items():
+                row_data.append(colored(value, 'blue'))
+            table_rows.append(row_data)
+    else:
+        table_rows = [["No data to Print"]]
+    table = AsciiTable(table_rows)
+    cprint(table.table, 'green')
+
+def print_subtitle(text):
+    cprint("\n\n%s\n%s" % (text,"-" * len(text)), 'cyan')
 
 class AmityInteractive(cmd.Cmd):
     '''
@@ -112,8 +118,30 @@ class AmityInteractive(cmd.Cmd):
     intro = colored("\nWelcome to my Amity!" \
             + "\n\t<Type 'help' to see the list of available commands>\n", 'blue', attrs=['dark'])
 
-    amity_prompt = colored('Amity # ', 'cyan', attrs=['bold'])
+    amity_prompt = colored('Amity # ', 'yellow', attrs=['bold'])
     prompt = amity_prompt
+
+    @docopt_cmd
+    def do_create_room(self, args):
+        """
+        Function: Create one or more rooms in Amity
+        Info:  Add '-ls' at the end of the room name to indicate that it is a living space.
+                Offices are created by default (i.e. if there is no '-ls' suffix)
+        Usage: create_room <room_name>...
+        """
+        rooms = []
+        for room in args['<room_name>']:
+            rooms.append(room)
+
+        new_rooms = amity.create_room(rooms)
+        if isinstance(new_rooms, str):
+            print(new_rooms)
+        offices = [office for office in new_rooms if isinstance(office, Office)]
+        living_spaces = [living_space for living_space in new_rooms if isinstance(living_space, LivingSpace)]
+        room_data = amity.translate_room_data_to_dict(offices, living_spaces)
+        print_subtitle("Newly Created Rooms")
+        pretty_print_data(room_data)
+
 
 
     def do_quit(self, args):
