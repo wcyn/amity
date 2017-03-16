@@ -114,6 +114,11 @@ def print_subtitle(text):
 def print_info(text):
     cprint("\n%s" % (text), 'blue')
 
+def print_error(text):
+    cprint("\n%s\n%s\n%s" % ("-"*len(text), text, "-"*len(text)), 'magenta')
+
+
+
 class AmityInteractive(cmd.Cmd):
     '''
         The Amity Command Line Interface to be used for User interaction
@@ -176,7 +181,7 @@ class AmityInteractive(cmd.Cmd):
         new_person = amity.add_person(first_name, last_name, role, wants_accommodation)
         if not isinstance(new_person, str):
             if isinstance(new_person, str):
-                print(new_person)
+                print_error(new_person)
 
             if isinstance(new_person, Staff):
                 person_data = amity.translate_staff_data_to_dict([new_person])
@@ -213,7 +218,7 @@ class AmityInteractive(cmd.Cmd):
                 print_subtitle("Reallocated Person")
                 pretty_print_data(person_data)
             else:
-                print(reallocation)
+                print_error(reallocation)
 
     @docopt_cmd
     def do_load_people(self, args):
@@ -223,7 +228,7 @@ class AmityInteractive(cmd.Cmd):
         """
         loaded_people = amity.load_people(args['<filename>'])
         if isinstance(loaded_people, str):
-            print(loaded_people)
+            print_error(loaded_people)
         else:
             fellows = [fellow for fellow in loaded_people if isinstance(fellow, Fellow)]
             staff = [staff for staff in loaded_people if isinstance(staff, Staff)]
@@ -234,6 +239,15 @@ class AmityInteractive(cmd.Cmd):
             print_subtitle("Newly Created People from File")
             pretty_print_data(fellow_data + staff_data)
 
+    @docopt_cmd
+    def do_print_allocations(self, args):
+        """
+        Prints a list of allocations onto the screen
+        Usage: print_allocations [--o=FILENAME]
+        """
+        allocations = amity.print_allocations(args['--o'])
+        if isinstance(allocations, str):
+            print_error(allocations)
 
 
     def do_quit(self, args):

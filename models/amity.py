@@ -102,7 +102,7 @@ class Amity(object):
 
             # Randomly allocate office to new person
             if not self.offices:
-                print("\nThere exists no offices to assign person to")
+                print("\nThere exists no offices to assign to '%s %s'" % (new_person.first_name, new_person.last_name))
             else:
                 self.randomly_allocate_room(new_person, self.allowed_office_strings[0])
 
@@ -197,11 +197,9 @@ class Amity(object):
                     person_data = i.strip().split()
                     if person_data[2].lower() in self.allowed_fellow_strings:
                         fellow = self.add_person(person_data[0], person_data[1], self.allowed_fellow_strings[0])
-                        self.fellows.append(fellow)
                         loaded_people.append(fellow)
                     elif person_data[2].lower() in self.allowed_staff_strings:
                         staff = self.add_person(person_data[0], person_data[1], self.allowed_staff_strings[0])
-                        self.staff.append(staff)
                         loaded_people.append(staff)
                 else:
                     print("Ignoring badly formatted line: ", i.strip())
@@ -235,10 +233,9 @@ class Amity(object):
                                               not i.allocated_living_space and i.allocated_office_space]
             fellows = fellows_allocated_both + fellows_with_only_living_space + fellows_with_only_office_space
             allocations = staff + fellows
-            message = None
-            if not allocations:
-                message = "No allocations to print"
 
+            if not allocations:
+                return "No allocations to print"
 
             if filename:
                 if not isinstance(filename, str):
@@ -250,7 +247,7 @@ class Amity(object):
             else:
                 for allocation in allocations:
                     print(allocation.strip())
-            return {"filename": filename, "allocations": allocations, "message": message}
+            return {"filename": filename, "allocations": allocations}
         except Exception as e:
             raise e
 
@@ -612,7 +609,7 @@ class Amity(object):
 
     @staticmethod
     def return_error_for_printing(text):
-        return colored("\n%s\n%s\n%s" % ("-" * len(text), text, "-" * len(text)), 'magenta')
+        return "%s" % text
 
 
 # db_file = "../databases/*amity_empty"
@@ -622,16 +619,16 @@ class Amity(object):
 # a.fellows += [Fellow("Gav", "Surname")]
 # print(a.save_state(None, True))
 # print(Amity().load_state(db_file))
-amity = Amity()
-office = Office("hogwarts")
-living_space = LivingSpace("python")
-staff = Staff("janet", "surname")
-# fellow = Fellow("jared", "surname", id=16)
-people_list = amity.load_people("test_people.txt")
-rooms = ["gates", "page", "jobs"]
-amity.offices = [office]
-amity.living_spaces = [living_space]
-julie = Fellow("Julie", "Surname2")
+# amity = Amity()
+# office = Office("hogwarts")
+# living_space = LivingSpace("python")
+# staff = Staff("janet", "surname")
+# # fellow = Fellow("jared", "surname", id=16)
+# people_list = amity.load_people("test_people.txt")
+# rooms = ["gates", "page", "jobs"]
+# amity.offices = [office]
+# amity.living_spaces = [living_space]
+# julie = Fellow("Julie", "Surname2")
 # amity.fellows = [fellow, julie]
 # amity.staff = [staff]
 #

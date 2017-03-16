@@ -301,11 +301,8 @@ class TestAmity(unittest.TestCase):
     def test_load_people_loads_people_into_amity_data_variables(self):
         filename = "test_people.in"
         self.amity.load_people("files/" + filename)
-        print("\n\n **** Amity fellows: ",  self.amity.fellows)
-        self.assertEqual(5, len(self.amity.fellows))
         self.assertEqual(4, len(self.amity.staff))
-        for i in self.amity.fellows:
-            print("Fellow: ", i.__dict__)
+        self.assertEqual(5, len(self.amity.fellows))
 
         self.assertTrue([x for x in self.amity.fellows if x.first_name.lower() + " " + x.last_name.lower() ==
                          "OLUWAFEMI SULE".lower()])
@@ -326,18 +323,21 @@ class TestAmity(unittest.TestCase):
     # *****************************
 
     def test_print_allocations_raises_type_error_when_filename_not_string(self):
+        self.fellow.allocated_office_space = self.office
         with self.assertRaises(TypeError):
-            self.amity.print_allocations(42)
-            self.amity.print_allocations(["hello"])
+            r = self.amity.print_allocations(42)
+            r2 =self.amity.print_allocations(["hello"])
 
 
     def test_print_allocations_gives_message_when_no_data_to_print(self):
         result = self.amity.print_allocations("test_allocations.txt")
-        self.assertEqual(result['message'], "No allocations to print")
+        self.assertEqual(result, "No allocations to print")
 
     def test_print_allocations_ignores_invalid_characters_in_filename(self):
+        self.fellow.allocated_office_space = self.office
         filename = "test_nairobi.txt"
         result = self.amity.print_allocations("test_nairobi:.txt")
+        print("Results!!! ", result)
         self.assertEqual(result['filename'], filename)
         result = self.amity.print_allocations("test_nairobi*.txt")
         self.assertEqual(result['filename'], filename)
@@ -426,19 +426,20 @@ class TestAmity(unittest.TestCase):
 
     def test_print_unallocated_ignores_invalid_characters_in_filename(self):
         filename = "test_nairobi.txt"
-        result = self.amity.print_allocations("test_nairobi:.txt")
+        result = self.amity.print_unallocated("test_nairobi:.txt")
+        print("Result 2: ", result)
         self.assertEqual(result['filename'], filename)
-        result = self.amity.print_allocations("test_nairobi*.txt")
+        result = self.amity.print_unallocated("test_nairobi*.txt")
         self.assertEqual(result['filename'], filename)
-        result = self.amity.print_allocations("test_nairobi?.txt")
+        result = self.amity.print_unallocated("test_nairobi?.txt")
         self.assertEqual(result['filename'], filename)
-        result = self.amity.print_allocations("test_nairobi<.txt")
+        result = self.amity.print_unallocated("test_nairobi<.txt")
         self.assertEqual(result['filename'], filename)
-        result = self.amity.print_allocations("test_nairobi>.txt")
+        result = self.amity.print_unallocated("test_nairobi>.txt")
         self.assertEqual(result['filename'], filename)
-        result = self.amity.print_allocations("test_nairobi/.txt")
+        result = self.amity.print_unallocated("test_nairobi/.txt")
         self.assertEqual(result['filename'], filename)
-        result = self.amity.print_allocations("test_nairobi\.txt")
+        result = self.amity.print_unallocated("test_nairobi\.txt")
         self.assertEqual(result['filename'], filename)
         os.remove(filename)
 
