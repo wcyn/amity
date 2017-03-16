@@ -87,7 +87,8 @@ class Amity(object):
         try:
             new_person = None
             if type.lower() in self.allowed_fellow_strings:
-                new_person = Fellow(first_name, last_name)
+                new_person = Fellow(first_name, last_name, id=3742)
+                new_person.wants_accommodation = wants_accommodation
                 self.fellows.append(new_person)
             elif type.lower() in self.allowed_staff_strings:
                 new_person = Staff(first_name, last_name)
@@ -98,8 +99,7 @@ class Amity(object):
             # Randomly allocate office to new person
             self.randomly_allocate_room(new_person, self.allowed_office_strings[0])
 
-            new_person.wants_accommodation = wants_accommodation
-            if wants_accommodation:
+            if wants_accommodation and type.lower() in self.allowed_fellow_strings:
                 # Randomly assign available living space to fellow
                 result = self.randomly_allocate_room(new_person, self.allowed_living_space_strings[0])
                 if result:
@@ -347,7 +347,7 @@ class Amity(object):
                       ''')
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS people
-                    (uuid varchar(36) PRIMARY KEY,
+                    (id INTEGER PRIMARY KEY,
                     first_name varchar(50) NOT NULL,
                     last_name varchar(50) NOT NULL,
                     role varchar(50),
@@ -361,12 +361,12 @@ class Amity(object):
                     cursor.executemany("INSERT OR REPLACE INTO rooms (name, type) values (?, ?)",
                                        self.tuplize_room_data(self.get_all_rooms()))
                 if self.fellows:
-                    cursor.executemany("INSERT OR REPLACE INTO people (uuid, first_name, last_name, role,"
+                    cursor.executemany("INSERT OR REPLACE INTO people (id, first_name, last_name, role,"
                                        "allocated_office_space, allocated_living_space, wants_accommodation) "
                                        "values (?, ?, ?, ?, ?, ?, ?)",
                                        self.tuplize_fellow_data(self.fellows))
                 if self.staff:
-                    cursor.executemany("INSERT OR REPLACE INTO people (uuid, first_name, last_name, role,"
+                    cursor.executemany("INSERT OR REPLACE INTO people (id, first_name, last_name, role,"
                                        "allocated_office_space, allocated_living_space, wants_accommodation) "
                                        "values (?, ?, ?, ?, ?, ?, ?)",
                                        self.tuplize_staff_data(self.staff))
@@ -440,16 +440,41 @@ class Amity(object):
             print("\n\n\n ##### person in people list: ", person)
             print("\n\n")
             if person[3].lower() in self.allowed_fellow_strings:
-                fellow = Fellow(person[1], person[2], id=person[0],
-                                allocated_office_space=self.get_room_object_from_name(person[4]),
-                                allocated_living_space=self.get_room_object_from_name(person[5]),
-                                wants_accommodation=True if person[6] else False )
-                self.fellows.append(fellow)
-                loaded_people.append(fellow)
-            elif person[3].lower in self.allowed_staff_strings:
-                staff = Staff(person[0], person[1])
-                self.staff.append(staff)
-                loaded_people.append(staff)
+                if person[0] in [person.id for person in self.fellows]:
+                    # get fellow with similar id and apply values
+                    fellow = [p for p in self.get_all_people() if p.id == person[0]][0]
+                    print("Similar fellow!: ",  fellow.__dict__)
+                    fellow.id = person[0]
+                    fellow.first_name = person[1]
+                    fellow.last_name = person[2]
+                    fellow.allocated_office_space=self.get_room_object_from_name(person[4])
+                    fellow.allocated_living_space=self.get_room_object_from_name(person[5])
+                    fellow.wants_accommodation=True if person[6] else False
+                else:
+                    # Create a new fellow
+                    fellow = Fellow(person[1], person[2], id=person[0],
+                                    allocated_office_space=self.get_room_object_from_name(person[4]),
+                                    allocated_living_space=self.get_room_object_from_name(person[5]),
+                                    wants_accommodation=True if person[6] else False )
+                    # Only append new fellow
+                    self.fellows.append(fellow)
+                    loaded_people.append(fellow)
+                    print("final Fellow: ", fellow.__dict__)
+            elif person[3].lower() in self.allowed_staff_strings:
+                if person[0] in [person.id for person in self.fellows]:
+                    # get staff with similar id and apply values
+                    staff = [p for p in self.get_all_people() if p.id == person[0]][0]
+                    print("Similar Staff!", staff.__dict__)
+                    staff.id = person[0]
+                    staff.first_name = person[1]
+                    staff.last_name = person[2]
+                    staff.allocated_office_space=self.get_room_object_from_name(person[4])
+                else:
+                    staff = Staff(person[1], person[2], id=person[0],
+                                  allocated_office_space=self.get_room_object_from_name(person[4]))
+                    # Only append new staff
+                    self.staff.append(staff)
+                    loaded_people.append(staff)
         return loaded_people
 
     def add_room_database_data_to_amity(self, room_list):
@@ -478,7 +503,7 @@ class Amity(object):
     def get_all_rooms(self):
         return self.offices + self.living_spaces
 
-    def fetch_all_people(self):
+    def get_all_people(self):
         return self.staff + self.fellows
 
     def get_allocated_staff(self):
@@ -511,7 +536,7 @@ class Amity(object):
     def tuplize_fellow_data(fellows_list):
         tuple_list = []
         for fellow in fellows_list:
-            print("\n\n &&& Tupleize: ", fellow.__dict__)
+            print("\n\n &&& Tuplize felllow: ", fellow.__dict__)
             print("\n\n\n")
             if fellow.allocated_office_space:
                 allocated_office_space = fellow.allocated_office_space.name
@@ -537,6 +562,7 @@ class Amity(object):
     def tuplize_staff_data(staff_list):
         tuple_list = []
         for staff in staff_list:
+            print("Tuplize staff: ", staff.__dict__)
             if staff.allocated_office_space:
                 allocated_office_space = staff.allocated_office_space.name
             else:
@@ -553,37 +579,66 @@ class Amity(object):
             ))
         return tuple_list
 
+    @staticmethod
+    def translate_fellow_data_to_dict(fellow_list):
+        fellow_dict_list = [fellow.__dict__ for fellow in fellow_list]
+        for fellow in fellow_dict_list:
+            if fellow['_Person__allocated_office_space']:
+                fellow['_Person__allocated_office_space'] = fellow['_Person__allocated_office_space'].name
+            if fellow['_Fellow__allocated_living_space']:
+                fellow['_Fellow__allocated_living_space'] = fellow['_Fellow__allocated_living_space'].name
+        return fellow_dict_list
+
+    @staticmethod
+    def translate_staff_data_to_dict(staff_list):
+        staff_dict_list = [staff.__dict__ for staff in staff_list]
+        for staff in staff_dict_list:
+            if staff['_Person__allocated_office_space']:
+                staff['_Person__allocated_office_space'] = staff['_Person__allocated_office_space'].name
+            # In order to match with the fellows (for table printing)
+            staff['_Fellow__allocated_living_space'] = None
+            staff['_Fellow__wants_accommodation'] = False
+        return staff_dict_list
+
 
 # db_file = "../databases/*amity_empty"
 # connection = sqlite3.connect(db_file)
 # print("Connection obj", connection)
-a = Amity()
-a.fellows += [Fellow("Gav", "Surname")]
+# a = Amity()
+# a.fellows += [Fellow("Gav", "Surname")]
 # print(a.save_state(None, True))
 # print(Amity().load_state(db_file))
 amity = Amity()
 office = Office("hogwarts")
 living_space = LivingSpace("python")
 staff = Staff("janet", "surname")
-fellow = Fellow("jake", "surname", id="0201acc6-a550-4d57-aa8d-989b4ade8500")
+# fellow = Fellow("jared", "surname", id=16)
 people_list = amity.load_people("test_people.txt")
 rooms = ["gates", "page", "jobs"]
 amity.offices = [office]
 amity.living_spaces = [living_space]
 julie = Fellow("Julie", "Surname2")
-amity.fellows = [fellow, julie]
-amity.staff = [staff]
-#
+# amity.fellows = [fellow, julie]
+# amity.staff = [staff]
+
+amity.add_person("MAria", "Najai", "f", True)
+amity.add_person("Ben", "Maro", "s", True)
+
 # print(amity.tuplize_room_data(amity.offices + amity.living_spaces))
 # print(amity.tuplize_fellow_data(amity.fellows))
 # print(amity.tuplize_staff_data(amity.staff))
 # print(fellow.wants_accommodation)
-# print(amity.load_state("amity"))
+print(amity.load_state("amity"))
 # # jake = [f for f in amity.fellows if f.id=="ea9a11ba-ae4e-4bb4-926d-9849743e8e69"][0]
-# amity.allocate_room_to_person(julie, office)
-# julie.allocated_office_space = office
+amity.allocate_room_to_person(julie, office)
+julie.allocated_office_space = office
 # print("\n\n %% Julie! OS", julie.__dict__)
 # print("\n\n %% Jake LS! ", julie.allocated_living_space)
-# amity.save_state("amity", True)
+amity.save_state("amity", True)
 # print([p.__dict__ for p in amity.fellows + amity.staff])
 # print([r.__dict__ for r in amity.get_all_rooms()])
+
+
+# print("\n\n ^^^^ people:", [fellow.__dict__ for fellow in amity.get_all_people()])
+
+# pretty_print_data(fellow_data_to_dict(amity.fellows) + staff_data_to_dict(amity.staff))

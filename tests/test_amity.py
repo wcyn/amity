@@ -6,9 +6,9 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-from app.amity import Amity
-from app.person import Fellow, Staff
-from app.room import LivingSpace, Office
+from models.amity import Amity
+from models.person import Fellow, Staff
+from models.room import LivingSpace, Office
 
 
 class TestAmity(unittest.TestCase):

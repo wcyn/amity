@@ -1,11 +1,11 @@
-import  uuid
+import  random
 from room import Office, LivingSpace
 
 
 class Person(object):
     def __init__(self, first_name, last_name, **kwargs):
         # If not defined, id is None
-        self.id = kwargs.pop('id', str(uuid.uuid4()))
+        self.id = kwargs.pop('id', random.randrange(0, 99999))
         # If not defined, allocated_office_space is None
         self.allocated_office_space = kwargs.pop('allocated_office_space',
                                                  None)
@@ -20,11 +20,11 @@ class Person(object):
 
     @property
     def id(self):
-        return self.__id
+        return int(self.__id)
 
     @id.setter
     def id(self, id):
-        self.__id = id
+        self.__id = int(id)
 
     @property
     def first_name(self):
@@ -55,9 +55,7 @@ class Person(object):
     @allocated_office_space.setter
     def allocated_office_space(self, office_space):
         if isinstance(office_space, Office):
-            print("Office space allocate? ", office_space.__dict__)
             # If Person already had an Office Space, decrement number of occupants from previous office space
-            print("Self in office space? ", self.__dict__)
             if isinstance(self.__allocated_office_space, Office):
                 self.__allocated_office_space.num_of_occupants -= 1
             # Automatically increment number of occupants in newly allocated office
@@ -104,8 +102,9 @@ class Fellow(Person):
             # Living space is not None
             # Cannot assign Non-LivingSpace instance to allocated_living_space
             print("Cannot assign Non-LivingSpace instance to allocated_living_space")
+            self.__allocated_living_space = None
         else:
-            self.__allocated_living_space = living_space
+            self.__allocated_living_space = None
 
     @property
     def wants_accommodation(self):
