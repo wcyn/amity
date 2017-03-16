@@ -111,6 +111,9 @@ def pretty_print_data(list_of_dicts):
 def print_subtitle(text):
     cprint("\n\n%s\n%s" % (text,"-" * len(text)), 'cyan')
 
+def print_info(text):
+    cprint("\n%s" % (text), 'blue')
+
 class AmityInteractive(cmd.Cmd):
     '''
         The Amity Command Line Interface to be used for User interaction
@@ -124,7 +127,8 @@ class AmityInteractive(cmd.Cmd):
     @docopt_cmd
     def do_create_room(self, args):
         """
-        Function: Create one or more rooms in Amity
+        Create one or more rooms in Amity
+
         Info:  Add '-ls' at the end of the room name to indicate that it is a living space.
                 Offices are created by default (i.e. if there is no '-ls' suffix)
         Usage: create_room <room_name>...
@@ -142,6 +146,44 @@ class AmityInteractive(cmd.Cmd):
         print_subtitle("Newly Created Rooms")
         pretty_print_data(room_data)
 
+    @docopt_cmd
+    def do_add_person(self, args):
+        """
+        Adds a person to the system and allocates the person to a random room.
+
+        Arguments:
+            <first_name> User's first name
+            <last_name> User's last name
+            <role> specifies the role of the person being added ('Fellow' or 'Staff')
+            [<wants_accommodation>] Indicates if user wants accommodation or not. It only accepts 'Y','Yes','No'or 'N'
+
+        Usage: add_person <first_name> <last_name> <role> [<wants_accommodation>]
+        """
+        first_name = args['<first_name>']
+        last_name = args['<last_name>']
+        role = args['<role>']
+        if role not in amity.allowed_fellow_strings + amity.allowed_staff_strings:
+            print_info("Invalid arguments. \n- <role> can either be 'Fellow' or 'Staff' ")
+            return
+        wants_accommodation = args['<wants_accommodation>'] or 'N'
+        if wants_accommodation.lower() not in amity.allowed_yes_strings + amity.allowed_no_strings:
+            print_info("Invalid  arguments. \n- <wants_accommodation> can either be among %s" % (
+                amity.allowed_yes_strings + amity.allowed_no_strings
+            ))
+            return
+        wants_accommodation = True if wants_accommodation in amity.allowed_yes_strings else False
+
+        new_person = amity.add_person(first_name, last_name, role, wants_accommodation)
+        if isinstance(new_person, str):
+            print(new_person)
+
+        if isinstance(new_person, Staff):
+            person_data = amity.translate_staff_data_to_dict([new_person])
+        else:
+            person_data = amity.translate_fellow_data_to_dict([new_person])
+
+        print_subtitle("Newly Added Person")
+        pretty_print_data(person_data)
 
 
     def do_quit(self, args):

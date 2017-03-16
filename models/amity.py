@@ -101,11 +101,17 @@ class Amity(object):
                 return self.return_error_for_printing(self.error_codes[5] + " '%s'" % type)
 
             # Randomly allocate office to new person
-            self.randomly_allocate_room(new_person, self.allowed_office_strings[0])
+            if not self.offices:
+                print("\nThere exists no offices to assign person to")
+            else:
+                self.randomly_allocate_room(new_person, self.allowed_office_strings[0])
 
             if wants_accommodation and type.lower() in self.allowed_fellow_strings:
                 # Randomly assign available living space to fellow
-                result = self.randomly_allocate_room(new_person, self.allowed_living_space_strings[0])
+                if not self.living_spaces:
+                    print("\nThere exists no living space to assign fellow to")
+                else:
+                    result = self.randomly_allocate_room(new_person, self.allowed_living_space_strings[0])
                 if result:
                     # Reset wants accommodation to False since they now have accommodation
                     new_person.wants_accommodation = False
