@@ -10,8 +10,9 @@ branches:
   only:
     - develop
     - tests
+    - features
 script:
-- nosetests --with-coverage
+- nosetests --rednose --with-coverage --cover-package=app
 after_success: coveralls
 cache: pip
 notifications:
