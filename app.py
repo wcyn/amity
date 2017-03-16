@@ -249,12 +249,10 @@ class AmityInteractive(cmd.Cmd):
         if isinstance(allocations, str):
             print_error(allocations)
 
-
     def do_quit(self, args):
         """ Quits Amity """
         print("Ciao!")
         exit()
-
 
 opt = docopt(__doc__, sys.argv[1:])
 
