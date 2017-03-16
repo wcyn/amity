@@ -1,5 +1,5 @@
 import  random
-from room import Office, LivingSpace
+from .room import Office, LivingSpace
 
 
 class Person(object):

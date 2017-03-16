@@ -3,8 +3,8 @@ import sys
 import sqlite3
 import random
 
-from room import Office, LivingSpace
-from person import Staff, Fellow
+from .room import Office, LivingSpace
+from .person import Staff, Fellow
 from pathlib import Path
 
 
@@ -611,7 +611,6 @@ class Amity(object):
             office['type'] = "office"
         for living_space in living_space_dict_list:
             living_space['type'] = "living-space"
-
 
         return office_dict_list + living_space_dict_list
 
