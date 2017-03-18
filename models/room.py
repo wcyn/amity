@@ -7,7 +7,7 @@ class Room(object):
         if cls is Room:
             raise TypeError("The Room class may not be instantiated")
         return super(Room, cls).__new__(cls)
-        
+
     @property
     def name(self):
         return self.__name
@@ -30,9 +30,10 @@ class Room(object):
     def get_max_occupants(self):
         return self.max_occupants
 
+
 class Office(Room):
     max_occupants = 6
 
-class LivingSpace(Room):
-    max_occupants = 4   
 
+class LivingSpace(Room):
+    max_occupants = 4

@@ -1,11 +1,15 @@
-import  random
+import random
+
 from .room import Office, LivingSpace
 
 
 class Person(object):
+    """
+
+    """
     def __init__(self, first_name, last_name, **kwargs):
         # If not defined, id is None
-        self.id = kwargs.pop('id', random.randrange(0, 99999))
+        self.person_id = kwargs.pop('id', random.randrange(0, 99999))
         # If not defined, allocated_office_space is None
         self.allocated_office_space = kwargs.pop('allocated_office_space',
                                                  None)
@@ -19,12 +23,12 @@ class Person(object):
         return super(Person, cls).__new__(cls)
 
     @property
-    def id(self):
+    def person_id(self):
         return int(self.__id)
 
-    @id.setter
-    def id(self, id):
-        self.__id = int(id)
+    @person_id.setter
+    def person_id(self, person_id):
+        self.__person_id = int(person_id)
 
     @property
     def first_name(self):
@@ -55,19 +59,23 @@ class Person(object):
     @allocated_office_space.setter
     def allocated_office_space(self, office_space):
         if isinstance(office_space, Office):
-            # If Person already had an Office Space, decrement number of occupants from previous office space
+            # If Person already had an Office Space, decrement number of
+            # occupants from previous office space
             if isinstance(self.__allocated_office_space, Office):
                 self.__allocated_office_space.num_of_occupants -= 1
-            # Automatically increment number of occupants in newly allocated office
+            # Automatically increment number of occupants in newly allocated
+            #   office
             office_space.num_of_occupants += 1
             self.__allocated_office_space = office_space
         elif office_space:
             # Office space is not None
             # Cannot assign Non-Office instance to allocated_office_space
-            print("Cannot assign non-offices instance to allocated_office_space")
+            print("Cannot assign non-offices instance to  "
+                  "allocated_office_space")
             self.__allocated_office_space = None
         else:
             self.__allocated_office_space = None
+
 
 class Staff(Person):
 
@@ -80,28 +88,47 @@ class Fellow(Person):
     def __init__(self, *args, **kwargs):
         super(Fellow, self).__init__(*args, **kwargs)
         # Default is None
-        self.allocated_living_space = kwargs.pop('allocated_living_space',
-         None)
+        self.allocated_living_space = kwargs.pop(
+                'allocated_living_space', None)
         # Default is False, meaning No
-        self.wants_accommodation = kwargs.pop('wants_accommodation', False)
+        self.wants_accommodation = kwargs.pop(
+                'wants_accommodation', False)
 
     @property
     def allocated_living_space(self):
         return self.__allocated_living_space
 
+    @property
+    def allocated_office_space(self):
+        """
+
+        :return:
+        :rtype:
+        """
+
     @allocated_living_space.setter
     def allocated_living_space(self, living_space):
+        """
+
+        :param living_space:
+        :type living_space:
+        :return:
+        :rtype:
+        """
         if isinstance(living_space, LivingSpace):
-            # If Fellow already had a Living Space, decrement number of occupants from previous living space
+            # If Fellow already had a Living Space, decrement number of
+            # occupants from previous living space
             if isinstance(self.__allocated_living_space, LivingSpace):
                 self.__allocated_living_space.num_of_occupants -= 1
-            # Automatically increment number of occupants in newly allocated living space
+            # Automatically increment number of occupants in newly allocated
+            #   living space
             living_space.num_of_occupants += 1
             self.__allocated_living_space = living_space
         elif living_space:
             # Living space is not None
             # Cannot assign Non-LivingSpace instance to allocated_living_space
-            print("Cannot assign Non-LivingSpace instance to allocated_living_space")
+            print("Cannot assign Non-LivingSpace instance to  "
+                  "allocated_living_space")
             self.__allocated_living_space = None
         else:
             self.__allocated_living_space = None
@@ -116,4 +143,3 @@ class Fellow(Person):
             self.__wants_accommodation = True
         else:
             self.__wants_accommodation = False
-

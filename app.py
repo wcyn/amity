@@ -248,6 +248,94 @@ class AmityInteractive(cmd.Cmd):
         allocations = amity.print_allocations(args['--o'])
         if isinstance(allocations, str):
             print_error(allocations)
+        else:
+            fellows = [fellow for fellow in allocations if isinstance(fellow, Fellow)]
+            staff = [staff for staff in allocations if isinstance(staff, Staff)]
+            fellow_data = amity.translate_fellow_data_to_dict(fellows)
+
+            staff_data = amity.translate_staff_data_to_dict(staff)
+
+            print_subtitle("Amity Allocations")
+            pretty_print_data(fellow_data + staff_data)
+
+    @docopt_cmd
+    def do_print_unallocated(self, args):
+        """
+        Prints a list of allocations onto the screen.
+        Usage: print_unallocated [--o=FILENAME]
+        """
+        result = amity.print_unallocated(args['--o'])
+        if isinstance(result, str):
+            print_info(result)
+
+    @docopt_cmd
+    def do_print_room(self, args):
+        """
+        Prints the names of all the people in  room_name  on the
+        screen.
+        Usage: print_room <room_name>
+        """
+        result = amity.print_room(args['<room_name>'])
+        if isinstance(result, str):
+            print_info(result)
+
+    @docopt_cmd
+    def do_save_state(self, args):
+        """
+        Persists all the data stored in the app to a SQLite database
+        Usage: save_state [--db=sqlite_database]
+        """
+        if args['--db']:
+            result = amity.save_state(args['--db'])
+        else:
+            result = amity.save_state()
+
+        if isinstance(result, str):
+            print_info(result)
+
+    @docopt_cmd
+    def do_load_state(self, args):
+        """
+        Loads data from a database into the application.
+        Usage: load_state [<sqlite_database>]
+        """
+        if args['<sqlite_database>']:
+            path = args['<sqlite_database>'].split('/')[:-1]
+            database_name = args['<sqlite_database>'].split('/')[-1]
+            result = amity.load_state(database_name, path)
+        else:
+            result = amity.load_state()
+
+        if isinstance(result, str):
+            print_info(result)\
+
+    # @docopt_cmd
+    # def do_list_people(self):
+    #     """
+    #     List everyone in amity.
+    #     """
+    #     if args['<sqlite_database>']:
+    #         path = args['<sqlite_database>'].split('/')[:-1]
+    #         database_name = args['<sqlite_database>'].split('/')[-1]
+    #         result = amity.load_state(database_name, path)
+    #     else:
+    #         result = amity.load_state()
+    #
+    #     if isinstance(result, str):
+    #         print_info(result)
+    #
+    # app.py
+    # list_people
+    # app.py
+    # list_fellows
+    # app.py
+    # list_staff
+    # app.py
+    # list_rooms
+    # app.py
+    # list_offices
+    # app.py
+    # list_living_spaces
 
     def do_quit(self, args):
         """ Quits Amity """
