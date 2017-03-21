@@ -50,6 +50,13 @@ class Amity(object):
     }
 
     def create_room(self, room_names):
+        """
+
+        :param room_names:
+        :type room_names:
+        :return:
+        :rtype:
+        """
         new_rooms = []
         if not isinstance(room_names, list):
             return "Only a list of strings is allowed"
@@ -87,6 +94,19 @@ class Amity(object):
 
     def add_person(self, first_name, last_name, role,
                    wants_accommodation=False):
+        """
+
+        :param first_name:
+        :type first_name:
+        :param last_name:
+        :type last_name:
+        :param role:
+        :type role:
+        :param wants_accommodation:
+        :type wants_accommodation:
+        :return:
+        :rtype:
+        """
         if not isinstance(wants_accommodation, bool):
             return self.return_error_for_printing(
                     self.error_codes[7] + " '%s'" % wants_accommodation)
@@ -132,6 +152,17 @@ class Amity(object):
             raise e
 
     def allocate_room_to_person(self, person, room, reallocate=False):
+        """
+
+        :param person:
+        :type person:
+        :param room:
+        :type room:
+        :param reallocate:
+        :type reallocate:
+        :return:
+        :rtype:
+        """
         try:
             if room.get_max_occupants() - room.num_of_occupants:
                 # Should not assign a living space to a staff member
@@ -171,6 +202,15 @@ class Amity(object):
             raise e
 
     def randomly_allocate_room(self, person, room_type):
+        """
+
+        :param person:
+        :type person:
+        :param room_type:
+        :type room_type:
+        :return:
+        :rtype:
+        """
         if room_type not in self.allowed_living_space_strings + \
                 self.allowed_office_strings:
             return self.return_error_for_printing(
@@ -200,6 +240,13 @@ class Amity(object):
         return data
 
     def load_people(self, filename):
+        """
+
+        :param filename:
+        :type filename:
+        :return:
+        :rtype:
+        """
         try:
             with open(filename) as f:
                 people = f.readlines()
@@ -245,6 +292,13 @@ class Amity(object):
             raise e
 
     def print_allocations(self, filename=None):
+        """
+
+        :param filename:
+        :type filename:
+        :return:
+        :rtype:
+        """
         try:
             allocated_staff = self.get_allocated_staff()
             fellows_allocated_both = self.get_fellows_allocated_both()
@@ -302,6 +356,13 @@ class Amity(object):
             raise e
 
     def print_unallocated(self, filename=None):
+        """
+
+        :param filename:
+        :type filename:
+        :return:
+        :rtype:
+        """
         try:
             staff = [' '.join((staff.first_name, staff.last_name,
                                "Staff", '\n'))
@@ -342,6 +403,13 @@ class Amity(object):
             raise e
 
     def print_room(self, room_name):
+        """
+
+        :param room_name:
+        :type room_name:
+        :return:
+        :rtype:
+        """
         if not isinstance(room_name, str):
             raise TypeError
         rooms = self.get_all_rooms()
@@ -385,6 +453,15 @@ class Amity(object):
         return people_count
 
     def save_state(self, database_name=None, override=False):
+        """
+
+        :param database_name:
+        :type database_name:
+        :param override:
+        :type override:
+        :return:
+        :rtype:
+        """
         try:
             if database_name:
                 if set('[~!@#$%^&*()+{}"/\\:;\']+$').intersection(
@@ -457,6 +534,15 @@ class Amity(object):
             raise e
 
     def load_state(self, database_name=None, path=None):
+        """
+
+        :param database_name:
+        :type database_name:
+        :param path:
+        :type path:
+        :return:
+        :rtype:
+        """
         try:
             if database_name:
                 print("Functioning?")
@@ -502,8 +588,8 @@ class Amity(object):
                 people = cursor.fetchall()
                 cursor.execute("SELECT * FROM rooms")
                 rooms = cursor.fetchall()
-                people_objects = self.add_people_database_data_to_amity(people)
                 room_objects = self.add_room_database_data_to_amity(rooms)
+                people_objects = self.add_people_database_data_to_amity(people)
 
                 self.connection.close()
                 return {"people": people_objects, "rooms": room_objects}
@@ -511,6 +597,13 @@ class Amity(object):
             raise e
 
     def add_people_database_data_to_amity(self, people_list):
+        """
+
+        :param people_list:
+        :type people_list:
+        :return:
+        :rtype:
+        """
         loaded_people = []
         for person in people_list:
             if person[3].lower() in self.allowed_fellow_strings:
@@ -559,6 +652,13 @@ class Amity(object):
         return loaded_people
 
     def add_room_database_data_to_amity(self, room_list):
+        """
+
+        :param room_list:
+        :type room_list:
+        :return:
+        :rtype:
+        """
         loaded_rooms = []
         print("Room list:", room_list)
         for room in room_list:
@@ -573,6 +673,13 @@ class Amity(object):
         return loaded_rooms
 
     def get_room_object_from_name(self, name):
+        """
+
+        :param name:
+        :type name:
+        :return:
+        :rtype:
+        """
         if name:
             room = [room for room in self.get_all_rooms() if
                     room.name.lower() == name.lower()]
@@ -581,6 +688,13 @@ class Amity(object):
         return None
 
     def get_person_object_from_id(self, person_id):
+        """
+
+        :param person_id:
+        :type person_id:
+        :return:
+        :rtype:
+        """
         if person_id:
             person = [person for person in self.get_all_people()
                       if person.person_id == person_id]
@@ -589,41 +703,88 @@ class Amity(object):
         return None
 
     def get_all_rooms(self):
+        """
+
+        :return:
+        :rtype:
+        """
         return self.offices + self.living_spaces
 
     def get_all_people(self):
+        """
+
+        :return:
+        :rtype:
+        """
         return self.staff + self.fellows
 
     def get_allocated_staff(self):
+        """
+
+        :return:
+        :rtype:
+        """
         return [staff for staff in self.staff if isinstance(
                 staff.allocated_office_space, Office)]
 
     def get_fellows_allocated_both(self):
+        """
+
+        :return:
+        :rtype:
+        """
         return [fellow for fellow in self.fellows
                 if fellow.allocated_office_space and
                 fellow.allocated_living_space]
 
     def get_unallocated_staff(self):
+        """
+
+        :return:
+        :rtype:
+        """
         return [staff for staff in self.staff
                 if not staff.allocated_office_space]
 
     def get_fellows_with_no_allocation(self):
+        """
+
+        :return:
+        :rtype:
+        """
         return [fellow for fellow in self.fellows
                 if not fellow.allocated_living_space and not
                 fellow.allocated_office_space]
 
     def get_fellows_with_office_space_only(self):
+        """
+
+        :return:
+        :rtype:
+        """
         return [fellow for fellow in self.fellows
                 if fellow.allocated_office_space and not
                 fellow.allocated_living_space and fellow.wants_accommodation]
 
     def get_fellows_with_living_space_only(self):
+        """
+
+        :return:
+        :rtype:
+        """
         return [fellow for fellow in self.fellows
                 if fellow.allocated_living_space and not
                 fellow.allocated_office_space]
 
     @staticmethod
     def tuplize_room_data(room_list):
+        """
+
+        :param room_list:
+        :type room_list:
+        :return:
+        :rtype:
+        """
         tuple_list = []
         for room in room_list:
             tuple_list.append((
@@ -633,6 +794,13 @@ class Amity(object):
 
     @staticmethod
     def tuplize_fellow_data(fellows_list):
+        """
+
+        :param fellows_list:
+        :type fellows_list:
+        :return:
+        :rtype:
+        """
         tuple_list = []
         for fellow in fellows_list:
             if fellow.allocated_office_space:
@@ -657,6 +825,13 @@ class Amity(object):
 
     @staticmethod
     def tuplize_staff_data(staff_list):
+        """
+
+        :param staff_list:
+        :type staff_list:
+        :return:
+        :rtype:
+        """
         tuple_list = []
         for staff in staff_list:
             if staff.allocated_office_space:
@@ -677,6 +852,13 @@ class Amity(object):
 
     @staticmethod
     def translate_fellow_data_to_dict(fellow_list):
+        """
+
+        :param fellow_list:
+        :type fellow_list:
+        :return:
+        :rtype:
+        """
         fellow_dict_list = [fellow.__dict__ for fellow in fellow_list]
         for fellow in fellow_dict_list:
             if fellow['_Person__allocated_office_space']:
@@ -690,6 +872,13 @@ class Amity(object):
 
     @staticmethod
     def translate_staff_data_to_dict(staff_list):
+        """
+
+        :param staff_list:
+        :type staff_list:
+        :return:
+        :rtype:
+        """
         staff_dict_list = [staff.__dict__ for staff in staff_list]
         for staff in staff_dict_list:
             if staff['_Person__allocated_office_space']:
@@ -703,6 +892,15 @@ class Amity(object):
 
     @staticmethod
     def translate_room_data_to_dict(office_list, living_space_list):
+        """
+
+        :param office_list:
+        :type office_list:
+        :param living_space_list:
+        :type living_space_list:
+        :return:
+        :rtype:
+        """
         office_dict_list = [office.__dict__ for office in office_list]
         living_space_dict_list = [living_space.__dict__ for living_space
                                   in living_space_list]
@@ -715,4 +913,11 @@ class Amity(object):
 
     @staticmethod
     def return_error_for_printing(text):
+        """
+
+        :param text:
+        :type text:
+        :return:
+        :rtype:
+        """
         return "%s" % text

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding=utf-8
 
 """
 Amity.
@@ -42,7 +43,8 @@ Options:
     -i --interactive        Interactive Mode
     -h --help               Show this screen and exit from amity
     --o FILENAME            Specify filename
-    --db sqlite_databse     Name of SQLite Database to load from or save data to
+    --db sqlite_database     Name of SQLite Database to load from or save
+    data to
     -v --version
 """
 
@@ -58,12 +60,22 @@ from models.amity import Amity
 from models.room import Office, LivingSpace
 from models.person import Staff, Fellow
 
+
 def docopt_cmd(func):
     """
     This decorator is used to simplify the try/except block and pass the result
     of the docopt parsing to the called action
     """
     def fn(self, args):
+        """
+
+        :param self:
+        :type self:
+        :param args:
+        :type args:
+        :return:
+        :rtype:
+        """
         try:
             opt = docopt(fn.__doc__, args)
         except DocoptExit as error:
@@ -83,9 +95,9 @@ def docopt_cmd(func):
 
 
 def print_header():
-    '''
+    """
         Create a header to be displayed when the program starts
-    '''
+    """
     os.system("clear")
     print("\n")
     cprint(figlet_format('AMITY', font='colossal'), 'blue')
@@ -94,8 +106,13 @@ def print_header():
 
 
 def pretty_print_data(list_of_dicts):
+    """
+
+    :param list_of_dicts:
+    :type list_of_dicts:
+    """
     if list_of_dicts:
-        key_list = [colored(key.title().split('__')[-1], 'green')  for key in list_of_dicts[0].keys()]
+        key_list = [colored(key.title().split('__')[-1], 'green') for key in list_of_dicts[0].keys()]
         table_rows = [key_list]
 
         for object in list_of_dicts:
@@ -108,21 +125,38 @@ def pretty_print_data(list_of_dicts):
     table = AsciiTable(table_rows)
     cprint(table.table, 'green')
 
+
 def print_subtitle(text):
+    """
+
+    :param text:
+    :type text:
+    """
     cprint("\n\n%s\n%s" % (text,"-" * len(text)), 'cyan')
 
+
 def print_info(text):
-    cprint("\n%s" % (text), 'blue')
+    """
+
+    :param text:
+    :type text:
+    """
+    cprint("\n%s" % text, 'blue')
+
 
 def print_error(text):
+    """
+
+    :param text:
+    :type text:
+    """
     cprint("\n%s\n%s\n%s" % ("-"*len(text), text, "-"*len(text)), 'magenta')
 
 
-
 class AmityInteractive(cmd.Cmd):
-    '''
+    """
         The Amity Command Line Interface to be used for User interaction
-    '''
+    """
     intro = colored("\nWelcome to my Amity!" \
             + "\n\t<Type 'help' to see the list of available commands>\n", 'blue', attrs=['dark'])
 
@@ -309,6 +343,13 @@ class AmityInteractive(cmd.Cmd):
         if isinstance(result, str):
             print_info(result)\
 
+
+    @staticmethod
+    def do_quit():
+        """ Quits Amity """
+        print("Ciao!")
+        exit()
+
     # @docopt_cmd
     # def do_list_people(self):
     #     """
@@ -337,10 +378,6 @@ class AmityInteractive(cmd.Cmd):
     # app.py
     # list_living_spaces
 
-    def do_quit(self, args):
-        """ Quits Amity """
-        print("Ciao!")
-        exit()
 
 opt = docopt(__doc__, sys.argv[1:])
 

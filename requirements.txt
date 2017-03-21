@@ -1,3 +1,7 @@
+terminaltables
+docopt
+termcolor
+pyfiglet
 appdirs==1.4.0
 astroid==1.4.9
 colorama==0.3.7

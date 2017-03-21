@@ -4,9 +4,6 @@ from .room import Office, LivingSpace
 
 
 class Person(object):
-    """
-
-    """
     def __init__(self, first_name, last_name, **kwargs):
         # If not defined, id is None
         self.person_id = kwargs.pop('id', random.randrange(0, 99999))
@@ -24,6 +21,11 @@ class Person(object):
 
     @property
     def person_id(self):
+        """
+
+        :return:
+        :rtype:
+        """
         return int(self.__id)
 
     @person_id.setter
@@ -32,6 +34,11 @@ class Person(object):
 
     @property
     def first_name(self):
+        """
+
+        :return:
+        :rtype:
+        """
         return self.__first_name
 
     @first_name.setter
@@ -43,6 +50,11 @@ class Person(object):
 
     @property
     def last_name(self):
+        """
+
+        :return:
+        :rtype:
+        """
         return self.__last_name
 
     @last_name.setter
@@ -54,6 +66,11 @@ class Person(object):
 
     @property
     def allocated_office_space(self):
+        """
+
+        :return:
+        :rtype:
+        """
         return self.__allocated_office_space
 
     @allocated_office_space.setter
@@ -96,6 +113,11 @@ class Fellow(Person):
 
     @property
     def allocated_living_space(self):
+        """
+
+        :return:
+        :rtype:
+        """
         return self.__allocated_living_space
 
     @property
@@ -135,6 +157,11 @@ class Fellow(Person):
 
     @property
     def wants_accommodation(self):
+        """
+
+        :return:
+        :rtype:
+        """
         return self.__wants_accommodation
 
     @wants_accommodation.setter
