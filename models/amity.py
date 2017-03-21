@@ -25,7 +25,7 @@ class Amity(object):
     allowed_fellow_strings = ["fellow", "f"]
     allowed_staff_strings = ["staff", "s"]
     allowed_office_strings = ["office", "o"]
-    allowed_living_space_strings = ["living_space", "ls", "living-space"]
+    allowed_living_space_strings = ["living_space", "ls", "living-space", "l"]
     allowed_yes_strings = ["yes", "y"]
     allowed_no_strings = ["no", "n"]
     error_codes = {
@@ -49,9 +49,11 @@ class Amity(object):
         18: "Non-existent database"
     }
 
-    def create_room(self, room_names):
+    def create_room(self, room_names, room_type='office'):
         """
 
+        :param room_type:
+        :type room_type:
         :param room_names:
         :type room_names:
         :return:
@@ -67,10 +69,6 @@ class Amity(object):
         for room_name in room_names:
             if not isinstance(room_name, str):
                 raise TypeError
-            room_type = "office"
-            if room_name[-3:] == "-ls":
-                room_name = room_name[:-3]
-                room_type = "living-space"
             if room_name.lower() not in ([room.name.lower() for room in
                                           self.get_all_rooms()]):
                 try:

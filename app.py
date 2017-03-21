@@ -6,7 +6,7 @@ Amity.
 A room allocation system for Fellows and Staff.
 
 Usage:
-    app.py create_room <room_name>...
+    app.py create_room <room_name>... [-l|-o]
     app.py add_person <first_name> <last_name> <role> [<wants_accommodation>]
     app.py reallocate_person <person_identifier> <new_room_name>
     app.py load_people <filename>
@@ -176,15 +176,21 @@ class AmityInteractive(cmd.Cmd):
         """
         Create one or more rooms in Amity
 
-        Info:  Add '-ls' at the end of the room name to indicate that it is a living space.
-                Offices are created by default (i.e. if there is no '-ls' suffix)
-        Usage: create_room <room_name>...
+        Info:   Add '-ls' at the end of the room name to indicate that it
+                is a living space.
+                Offices are created by default (i.e. if there is no '-l'
+                option)
+        Usage: create_room <room_name>... [-l|-o]
         """
-        rooms = []
-        for room in args['<room_name>']:
-            rooms.append(room)
+        rooms = args['<room_name>']
+        print("Args: ", args)
 
-        new_rooms = amity.create_room(rooms)
+        if args['-l']:
+            new_rooms = amity.create_room(rooms, 'living-space')
+        else:
+            # Default room setting is office
+            new_rooms = amity.create_room(rooms)
+
         if isinstance(new_rooms, str):
             print(new_rooms)
         offices = [office for office in new_rooms if isinstance(office, Office)]
