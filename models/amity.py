@@ -5,7 +5,7 @@ import random
 
 from pathlib import Path
 
-from .room import Office, LivingSpace
+from models.room import LivingSpace, Office
 from .person import Staff, Fellow
 
 
@@ -127,8 +127,10 @@ class Amity(object):
                 print("\nThere exists no offices to assign to '%s %s'"
                       % (new_person.first_name, new_person.last_name))
             else:
-                self.randomly_allocate_room(new_person,
-                                            self.allowed_office_strings[0])
+                print("Randomly allocating room to %s" % new_person.first_name)
+                room = self.randomly_allocate_room(
+                        new_person, self.allowed_office_strings[0])
+                print("Allocated room: ", room)
 
             if wants_accommodation and role.lower() in \
                     self.allowed_fellow_strings:
@@ -189,7 +191,9 @@ class Amity(object):
                             person.allocated_living_space.name, room.name)
 
                 if isinstance(room, Office):
+                    print("Instance is Room!: ", room.__dict__)
                     person.allocated_office_space = room
+                    print("Person after allocation: ", person.__dict__)
                 elif isinstance(room, LivingSpace):
                     person.allocated_living_space = room
 
@@ -241,7 +245,6 @@ class Amity(object):
 
     def load_people(self, filename):
         """
-
         :param filename:
         :type filename:
         :return:
@@ -313,8 +316,6 @@ class Amity(object):
             print("Allocated data!: ", allocations)
             if not allocations:
                 return "No allocations to print"
-
-            print("allocated staff??? ", allocated_staff)
 
             allocated_staff_print = [' '.join(
                     (staff.first_name, staff.last_name, "Staff",
@@ -548,21 +549,23 @@ class Amity(object):
                 print("Functioning?")
                 print("db_name: ", database_name)
                 if set('[~!@#$%^&*()+{}"/\\:;\']+$').intersection(
-                        database_name) and \
-                        database_name not in self.special_databases:
+                        database_name) and database_name not in \
+                        self.special_databases:
                     return self.return_error_for_printing(
                             self.error_codes[17] + " '%s'" % database_name)
             else:
                 database_name = self.default_db_name
 
             if path:
-                database_file_path = "/".join(path) + "/" + database_name
+                database_file_path = path + "/" + database_name
             else:
                 database_file_path = self.database_directory + database_name
+            print("DB File path: ", database_file_path)
 
             db_path = Path(database_file_path)
 
             if not db_path.is_file():
+                print("DB not exist: ", database_file_path)
                 return self.return_error_for_printing(
                         self.error_codes[18] + " '%s'" % database_name)
             else:

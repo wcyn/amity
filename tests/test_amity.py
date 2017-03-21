@@ -12,7 +12,6 @@ from models.room import LivingSpace, Office
 
 
 class TestAmity(unittest.TestCase):
-
     def setUp(self):
         self.amity = Amity()
         self.office = Office("hogwarts")
@@ -46,7 +45,6 @@ class TestAmity(unittest.TestCase):
         # Create room should return a list of created room objects
         bee = self.amity.create_room(["bee-ls"])
         self.assertEqual(self.amity.living_spaces, [self.living_space] + bee)
-        print(self.amity.living_spaces[1].__dict__)
         self.assertEqual(self.amity.living_spaces[1].name, "Bee")
 
     def test_create_room_raises_type_error_with_non_string_room_names(self):
@@ -55,7 +53,8 @@ class TestAmity(unittest.TestCase):
             self.amity.create_room(rooms)
 
     def test_create_room_returns_error_message_when_argument_not_list(self):
-        self.assertEqual(self.amity.create_room("my room"), "Only a list of strings is allowed")
+        self.assertEqual(self.amity.create_room("my room"),
+                         "Only a list of strings is allowed")
         # Assert that nothing has been added to LivingSpaces or Offices
         self.assertEqual(self.amity.living_spaces, [self.living_space])
         self.assertEqual(self.amity.offices, [self.office])
@@ -78,7 +77,7 @@ class TestAmity(unittest.TestCase):
     # *****************************
 
     def test_add_person_fellow_adds_fellow_to_amity_list(self):
-        janet = self.amity.add_person("Janet","surname", "Fellow")
+        janet = self.amity.add_person("Janet", "surname", "Fellow")
         self.assertEqual(self.amity.fellows, [self.fellow, janet])
         self.assertIsInstance(self.amity.fellows[-1], Fellow)
 
@@ -103,7 +102,8 @@ class TestAmity(unittest.TestCase):
         self.assertEqual(self.amity.staff, [self.staff, kate, jack,
                                             david, maria])
 
-    def test_add_person_raises_attribute_error_with_non_string_person_name(self):
+    def test_add_person_raises_attribute_error_with_non_string_person_name(
+            self):
         with self.assertRaises(AttributeError):
             self.amity.add_person(42, "surname", "Staff")
 
@@ -115,15 +115,19 @@ class TestAmity(unittest.TestCase):
         self.assertEqual(self.amity.error_codes[5] + " 'manager'",
                          self.amity.add_person("Jane", "surname", "manager"))
 
-    def test_add_person_returns_error_message_on_wrong_accommodation_option(self):
+    def test_add_person_returns_error_message_on_wrong_accommodation_option(
+            self):
         self.assertEqual("%s %s" % (self.amity.error_codes[7], "'please'"),
-                         self.amity.add_person("Jane", "surname", "staff", "please"))
+                         self.amity.add_person("Jane", "surname", "staff",
+                                               "please"))
 
     def test_add_person_staff_returns_staff_object(self):
-        self.assertIsInstance(self.amity.add_person("Kate", "surname", "s"), Staff)
+        self.assertIsInstance(self.amity.add_person("Kate", "surname", "s"),
+                              Staff)
 
     def test_add_person_fellow_returns_fellow_object(self):
-        self.assertIsInstance(self.amity.add_person("Kate", "surname", "f"), Fellow)
+        self.assertIsInstance(self.amity.add_person("Kate", "surname", "f"),
+                              Fellow)
 
     def test_add_person_automatically_allocates_room_if_available(self):
         kate = self.amity.add_person("Kate", "surname", "f")
@@ -145,7 +149,7 @@ class TestAmity(unittest.TestCase):
     def test_allocate_living_space_to_staff_gives_error_message(self):
         # Test that nothing is added to living spaces or offices
         staff = self.amity.allocate_room_to_person(
-            self.staff, self.living_space)
+                self.staff, self.living_space)
         self.assertEqual(self.amity.living_spaces, [self.living_space])
         self.assertEqual(self.amity.error_codes[10], staff)
 
@@ -155,35 +159,36 @@ class TestAmity(unittest.TestCase):
         self.assertEqual(self.amity.living_spaces, [self.living_space])
         self.assertEqual(self.amity.error_codes[11],
                          self.amity.allocate_room_to_person(
-                             self.fellow, self.living_space))
+                                 self.fellow, self.living_space))
 
     def test_allocate_living_space_adds_living_space_object_to_fellow(self):
         # Returns the newly modified fellow object
         fellow = self.amity.allocate_room_to_person(
-            self.fellow, self.living_space)
+                self.fellow, self.living_space)
         self.assertIsInstance(fellow.allocated_living_space, LivingSpace)
 
     def test_allocate_living_space_allocates_correct_living_space(self):
         # Returns the newly modified fellow object
         self.amity.allocate_room_to_person(
-            self.fellow, self.living_space)
+                self.fellow, self.living_space)
         self.assertEqual(self.fellow.allocated_living_space, self.living_space)
 
-    def test_allocate_living_space_increments_number_of_occupants_in_living_space(self):
+    def test_allocate_living_space_increments_number_of_occupants_in_living_space(
+            self):
         self.amity.allocate_room_to_person(
-            self.fellow, self.living_space)
+                self.fellow, self.living_space)
         self.assertEqual(1, self.living_space.num_of_occupants)
         fellow2 = Fellow("Maria", "Jones")
         self.amity.allocate_room_to_person(
-            fellow2, self.living_space)
+                fellow2, self.living_space)
         self.assertEqual(2, self.living_space.num_of_occupants)
 
     def test_allocate_office_adds_living_space_allocates_correct_office(self):
         # Returns the newly modified fellow object
         self.amity.allocate_room_to_person(
-            self.fellow, self.office)
+                self.fellow, self.office)
         self.amity.allocate_room_to_person(
-            self.staff, self.office)
+                self.staff, self.office)
         self.assertEqual(self.fellow.allocated_office_space, self.office)
         self.assertEqual(self.staff.allocated_office_space, self.office)
 
@@ -192,8 +197,12 @@ class TestAmity(unittest.TestCase):
         self.amity.allocate_room_to_person(self.fellow, self.office)
         self.amity.allocate_room_to_person(self.staff, self.office)
         self.assertEqual(self.amity.offices, [self.office])
-        self.assertEqual(self.amity.error_codes[11], self.amity.allocate_room_to_person(self.fellow, self.office))
-        self.assertEqual(self.amity.error_codes[11], self.amity.allocate_room_to_person(self.staff, self.office))
+        self.assertEqual(self.amity.error_codes[11],
+                         self.amity.allocate_room_to_person(self.fellow,
+                                                            self.office))
+        self.assertEqual(self.amity.error_codes[11],
+                         self.amity.allocate_room_to_person(self.staff,
+                                                            self.office))
 
     def test_allocate_office_increments_number_of_occupants_in_office(self):
         self.amity.allocate_room_to_person(self.fellow, self.office)
@@ -201,14 +210,20 @@ class TestAmity(unittest.TestCase):
         self.amity.allocate_room_to_person(self.staff, self.office)
         self.assertEqual(2, self.office.num_of_occupants)
 
-    def test_allocate_room_returns_transfer_message_if_person_already_has_room(self):
+    def test_allocate_room_returns_transfer_message_if_person_already_has_room(
+            self):
         office2 = Office("krypton")
         self.fellow.allocated_office_space = self.office
         result = self.amity.allocate_room_to_person(self.fellow, office2)
-        self.assertEqual(result, "About to move %s from %s to %s" %(self.fellow.first_name,
-                                                                    self.office.name, office2.name))
+        self.assertEqual(result, "About to move %s from %s to %s" % (
+                        self.fellow.first_name,
+                        self.office.name, office2.name))
 
-    def test_allocate_person_causes_decrement_in_num_of_occupants_in_office_space_if_staff_previously_allocated(self):
+    def test_allocate_person_decrements_num_of_occupants_in_office_space(self):
+        """
+            Test that allocate person causes a decrement in number of
+            occupants in office space if staff was previously allocated
+        """
         office2 = Office("krypton")
         self.assertEqual(0, office2.num_of_occupants)
         self.assertEqual(0, self.office.num_of_occupants)
@@ -222,27 +237,33 @@ class TestAmity(unittest.TestCase):
         self.assertEqual(office2, self.staff.allocated_office_space)
         self.assertEqual(office2, staff.allocated_office_space)
 
-    def test_allocate_person_causes_decrement_in_num_of_occupants_in_living_space_if_fellow_previously_allocated(self):
+    def test_allocate_person_decrements_num_of_occupants_in_living_space(self):
+        """
+            Test that allocate person causes a decrement in number of
+            occupants in living space if fellow was previously allocated
+        """
         living_space2 = LivingSpace("krypton")
         self.assertEqual(0, living_space2.num_of_occupants)
         self.assertEqual(0, self.living_space.num_of_occupants)
         self.fellow.allocated_living_space = self.living_space
         self.assertEqual(1, self.living_space.num_of_occupants)
 
-        fellow = self.amity.allocate_room_to_person(self.fellow, living_space2, True)
+        fellow = self.amity.allocate_room_to_person(self.fellow, living_space2,
+                                                    True)
 
         self.assertEqual(1, living_space2.num_of_occupants)
         self.assertEqual(0, self.living_space.num_of_occupants)
         self.assertEqual(living_space2, self.fellow.allocated_living_space)
         self.assertEqual(living_space2, fellow.allocated_living_space)
 
-
     # Randomly Allocate Room Tests
     # *****************************
 
-    def test_randomly_allocate_room_returns_error_message_if_room_type_is_invalid(self):
+    def test_randomly_allocate_room_returns_error_message_if_room_type_is_invalid(
+            self):
         self.assertEqual(self.amity.error_codes[6] + " 'mansion'",
-                         self.amity.randomly_allocate_room(self.fellow, "mansion"))
+                         self.amity.randomly_allocate_room(self.fellow,
+                                                           "mansion"))
 
     def test_randomly_allocate_room_assigns_correct_room_type(self):
         ls_result = self.amity.randomly_allocate_room(self.fellow, "ls")
@@ -257,7 +278,6 @@ class TestAmity(unittest.TestCase):
         o_result = self.amity.randomly_allocate_room(self.fellow, "o")
         self.assertEqual(o_result, None)
         self.assertEqual(self.fellow.allocated_office_space, None)
-
 
     # Load People Tests
     # *****************************
@@ -275,8 +295,8 @@ class TestAmity(unittest.TestCase):
         if os.path.isfile(filename):
             os.remove(filename)
         result = self.amity.load_people(filename)
-        self.assertEqual(result, self.amity.error_codes[12] + " '%s'" % filename)
-
+        self.assertEqual(result,
+                         self.amity.error_codes[12] + " '%s'" % filename)
 
     def test_load_people_gives_error_message_when_file_is_empty(self):
         filename = "test_empty.txt"
@@ -284,19 +304,23 @@ class TestAmity(unittest.TestCase):
         file = open(filename, 'w')
         file.close()
         result = self.amity.load_people(filename)
-        self.assertEqual(result, self.amity.error_codes[13] + " '%s'" % filename)
+        self.assertEqual(result,
+                         self.amity.error_codes[13] + " '%s'" % filename)
         os.remove(filename)
 
-    def test_load_people_gives_error_message_when_file_is_wrongly_formatted(self):
+    def test_load_people_gives_error_message_when_file_is_wrongly_formatted(
+            self):
         filename = "wrong_format.txt"
-        lines = ["Wrongly formatted\n", "File that should\n", "cause an error when loaded\n", "in Amity."]
+        lines = ["Wrongly formatted\n", "File that should\n",
+                 "cause an error when loaded\n", "in Amity."]
         # Create wrongly formatted file
         with open(filename, 'w') as f:
             f.writelines(lines)
 
         result = self.amity.load_people(filename)
-        self.assertEqual(result, self.amity.error_codes[14] + " '%s'" % filename)
-        os.remove(filename) # Finally remove the file
+        self.assertEqual(result,
+                         self.amity.error_codes[14] + " '%s'" % filename)
+        os.remove(filename)  # Finally remove the file
 
     def test_load_people_loads_people_into_amity_data_variables(self):
         filename = "test_people.in"
@@ -304,21 +328,23 @@ class TestAmity(unittest.TestCase):
         self.assertEqual(4, len(self.amity.staff))
         self.assertEqual(5, len(self.amity.fellows))
 
-        self.assertTrue([x for x in self.amity.fellows if x.first_name.lower() + " " + x.last_name.lower() ==
+        self.assertTrue([x for x in self.amity.fellows if
+                         x.first_name.lower() + " " + x.last_name.lower() ==
                          "OLUWAFEMI SULE".lower()])
-        self.assertTrue([x for x in self.amity.staff if x.first_name.lower() + " " + x.last_name.lower() ==
+        self.assertTrue([x for x in self.amity.staff if
+                         x.first_name.lower() + " " + x.last_name.lower() ==
                          "DOMINIC WALTERS".lower()])
 
     # Print Allocations Tests
     # *****************************
 
-    def test_print_allocations_raises_type_error_when_filename_not_string(self):
+    def test_print_allocations_raises_type_error_when_filename_not_string(
+            self):
         self.fellow.allocated_office_space = self.office
         self.fellow.wants_accommodation = True
         with self.assertRaises(TypeError):
-            r = self.amity.print_allocations(42)
-            r2 =self.amity.print_allocations(["hello"])
-
+            self.amity.print_allocations(42)
+            self.amity.print_allocations(["hello"])
 
     def test_print_allocations_gives_message_when_no_data_to_print(self):
         result = self.amity.print_allocations("test_allocations.txt")
@@ -329,13 +355,15 @@ class TestAmity(unittest.TestCase):
         self.fellow.wants_accommodation = True
         filename = "test_nairobi.txt"
         result = self.amity.print_allocations("test_nairobi:*?.txt")
-        print("Results!!! ", result)
-        self.assertEqual(result, "Allocations saved to the file '%s'" % filename)
+        self.assertEqual(result,
+                         "Allocations saved to the file '%s'" % filename)
         os.remove(filename)
 
     def test_print_allocations_prints_only_allocated_people_to_file(self):
         fellow = Fellow("Vader", "Surname")
-        fellow.allocated_office_space, fellow.allocated_living_space = None, None
+        fellow.allocated_office_space = None
+        fellow.allocated_living_space = None
+
         self.amity.fellows.append(fellow)  # Unallocated
 
         self.fellow.allocated_living_space = self.living_space
@@ -353,22 +381,28 @@ class TestAmity(unittest.TestCase):
         self.assertFalse("Vader Surname Fellow" in allocated)
         os.remove(filename)
 
-    def test_print_allocations_prints_fellows_with_either_both_or_one_allocation_present(self):
+    def test_print_allocations_prints_fellows_with_either_both_or_one_allocation_present(
+            self):
         fellow = Fellow("Vader", "Surname")
         fellow2 = Fellow("Alex", "Surname")
         fellow3 = Fellow("David", "Surname")
         staff = Staff("Malia", "Surname")
-        fellow.allocated_office_space, fellow.allocated_living_space = None, None
-        fellow2.allocated_office_space, fellow2.allocated_living_space = self.office, None
+        fellow.allocated_office_space = None
+        fellow.allocated_living_space = None
+
+        fellow2.allocated_office_space = self.office
+        fellow2.allocated_living_space = None
         fellow2.wants_accommodation = True
-        fellow3.allocated_office_space, fellow3.allocated_living_space = None, self.living_space
+
+        fellow3.allocated_office_space = None
+        fellow3.allocated_living_space = self.living_space
         staff.allocated_office_space = None
 
-        self.amity.fellows.append(fellow) # Unallocated
-        self.amity.fellows.append(fellow2) # Unallocated
-        self.amity.fellows.append(fellow3) # Unallocated
+        self.amity.fellows.append(fellow)  # Unallocated
+        self.amity.fellows.append(fellow2)  # Unallocated
+        self.amity.fellows.append(fellow3)  # Unallocated
         self.amity.staff.append(staff)  # Unallocated
-        self.fellow.allocated_living_space =  self.living_space
+        self.fellow.allocated_living_space = self.living_space
         self.fellow.allocated_office_space = self.office
         self.staff.allocated_office_space = self.office
 
@@ -398,12 +432,14 @@ class TestAmity(unittest.TestCase):
         #     self.assertEqual(fakeOutput.getvalue().strip(), allocated)
         result = self.amity.print_allocations()
         print("result allocs: ", result)
-        self.assertEqual(result[0].allocated_office_space, self.fellow.allocated_office_space)
+        self.assertEqual(result[0].allocated_office_space,
+                         self.fellow.allocated_office_space)
 
     # Print Unallocated Tests
     # *****************************
 
-    def test_print_unallocated_raises_type_error_when_filename_not_string(self):
+    def test_print_unallocated_raises_type_error_when_filename_not_string(
+            self):
         with self.assertRaises(TypeError):
             self.amity.print_unallocated(42)
             self.amity.print_allocations(["hello"])
@@ -420,7 +456,8 @@ class TestAmity(unittest.TestCase):
     def test_print_unallocated_prints_only_unallocated_people_to_file(self):
         fellow = Fellow("Vader", "Surname")
         staff = Staff("Malia", "Surname")
-        fellow.allocated_office_space, fellow.allocated_living_space = None, None
+        fellow.allocated_office_space = None
+        fellow.allocated_living_space = None
         staff.allocated_office_space = None
         self.amity.fellows.append(fellow)  # Unallocated
         self.amity.staff.append(staff)  # Unallocated
@@ -440,22 +477,26 @@ class TestAmity(unittest.TestCase):
         self.assertTrue("Vader Surname Fellow" in unallocated)
         os.remove(filename)
 
-    def test_print_unallocated_prints_fellows_with_either_both_or_one_allocation_missing(self):
+    def test_print_unallocated_prints_fellows_with_either_both_or_one_allocation_missing(
+            self):
         fellow = Fellow("Vader", "Surname")
         fellow2 = Fellow("Alex", "Surname")
         fellow3 = Fellow("David", "Surname")
         staff = Staff("Malia", "Surname")
-        fellow.allocated_office_space, fellow.allocated_living_space = None, None
-        fellow2.allocated_office_space, fellow2.allocated_living_space = self.office, None
+        fellow.allocated_office_space = None
+        fellow.allocated_living_space = None
+        fellow2.allocated_office_space, fellow2.allocated_living_space = \
+            self.office, None
         fellow2.wants_accommodation = True
-        fellow3.allocated_office_space, fellow3.allocated_living_space = None, self.living_space
+        fellow3.allocated_office_space, fellow3.allocated_living_space = \
+            None, self.living_space
         staff.allocated_office_space = None
 
-        self.amity.fellows.append(fellow) # Unallocated
-        self.amity.fellows.append(fellow2) # Unallocated
-        self.amity.fellows.append(fellow3) # Unallocated
+        self.amity.fellows.append(fellow)  # Unallocated
+        self.amity.fellows.append(fellow2)  # Unallocated
+        self.amity.fellows.append(fellow3)  # Unallocated
         self.amity.staff.append(staff)  # Unallocated
-        self.fellow.allocated_living_space =  self.living_space
+        self.fellow.allocated_living_space = self.living_space
         self.fellow.allocated_office_space = self.office
         self.staff.allocated_office_space = self.office
 
@@ -473,16 +514,19 @@ class TestAmity(unittest.TestCase):
         self.assertTrue("David Surname Fellow - Python" in unallocated)
         os.remove(filename)
 
-
-    def test_print_unallocated_prints_correctly_to_console_if_no_file_given(self):
+    def test_print_unallocated_prints_correctly_to_console_if_no_file_given(
+            self):
         fellow = Fellow("Vader", "Surname")
         fellow2 = Fellow("Alex", "Surname")
         fellow3 = Fellow("David", "Surname")
         staff = Staff("Malia", "Surname")
-        fellow.allocated_office_space, fellow.allocated_living_space = None, None
-        fellow2.allocated_office_space, fellow2.allocated_living_space = self.office, None
+        fellow.allocated_office_space = None
+        fellow.allocated_living_space = None
+        fellow2.allocated_office_space, fellow2.allocated_living_space = \
+            self.office, None
         fellow2.wants_accommodation = True
-        fellow3.allocated_office_space, fellow3.allocated_living_space = None, self.living_space
+        fellow3.allocated_office_space, fellow3.allocated_living_space = \
+            None, self.living_space
         staff.allocated_office_space = None
 
         self.amity.fellows.append(fellow)  # Unallocated
@@ -494,9 +538,9 @@ class TestAmity(unittest.TestCase):
         self.staff.allocated_office_space = self.office
 
         unallocated = "Malia Surname Staff\n" \
-                        "Vader Surname Fellow\n"\
-                        "David Surname Fellow - Python\n"\
-                        "Alex Surname Fellow Hogwarts -"
+                      "Vader Surname Fellow\n" \
+                      "David Surname Fellow - Python\n" \
+                      "Alex Surname Fellow Hogwarts -"
         with patch('sys.stdout', new=StringIO()) as fakeOutput:
             self.amity.print_unallocated()
             self.assertEqual(fakeOutput.getvalue().strip(), unallocated)
@@ -519,7 +563,8 @@ class TestAmity(unittest.TestCase):
     def test_print_room_prints_only_the_people_in_the_room_to_console(self):
         fellow = Fellow("Vader", "Surname")
         staff = Staff("Malia", "Surname")
-        fellow.allocated_office_space, fellow.allocated_living_space = None, None
+        fellow.allocated_office_space = None
+        fellow.allocated_living_space = None
         staff.allocated_office_space = None
 
         self.amity.fellows.append(fellow)  # Unallocated
@@ -537,23 +582,29 @@ class TestAmity(unittest.TestCase):
     # Save State Tests
     # *****************************
 
-    def test_save_state_raises_type_error_when_database_name_not_string_ie_number(self):
+    def test_save_state_raises_type_error_when_database_name_not_string_ie_number(
+            self):
         with self.assertRaises(TypeError):
             self.amity.save_state(42)
 
-    def test_save_state_raises_type_error_when_database_name_not_string_ie_list(self):
+    def test_save_state_raises_type_error_when_database_name_not_string_ie_list(
+            self):
         with self.assertRaises(TypeError):
             self.amity.save_state(["hello"])
 
-    def test_save_state_gives_asks_for_override_when_database_already_exists(self):
+    def test_save_state_gives_asks_for_override_when_database_already_exists(
+            self):
         database_name = "test_database_override"
         # Create temporary database
         db_file = self.amity.database_directory + database_name
         res = sqlite3.connect(db_file)
         print("\n\n %%%% res: ", res)
-        sqlite3.connect = MagicMock(return_value="About to override database '%s'" % database_name)
+        sqlite3.connect = MagicMock(
+            return_value="About to override database '%s'" % database_name)
         self.amity.save_state(database_name)
-        self.assertEqual(self.amity.connection, "About to override database" + " '%s'" % database_name)
+        self.assertEqual(self.amity.connection,
+                         "About to override database" + " '%s'" %
+                         database_name)
         db_path = Path(db_file)
         if db_path.is_file():
             os.remove(self.amity.database_directory + database_name)
@@ -567,7 +618,6 @@ class TestAmity(unittest.TestCase):
 
         sqlite3.connect = MagicMock(return_value='No data to save')
         result = self.amity.save_state("test_database_no_data")
-        print("result: ", result)
         self.assertEqual(result, "No data to save")
 
     def test_save_state_sqlite3_connect_success(self):
@@ -575,47 +625,61 @@ class TestAmity(unittest.TestCase):
         sqlite3.connect = MagicMock(return_value='connection succeeded')
         self.amity.save_state(database_name)
 
-        sqlite3.connect.assert_called_with(self.amity.database_directory + database_name)
+        sqlite3.connect.assert_called_with(
+            self.amity.database_directory + database_name)
         self.assertEqual(self.amity.connection, 'connection succeeded')
 
     def test_save_state_sqlite3_connect_fail_on_invalid_characters(self):
         sqlite3.connect = MagicMock(return_value='connection failed')
         result = self.amity.save_state('test_database/')
-        self.assertEqual(result, self.amity.error_codes[17] + " 'test_database/'")
+        self.assertEqual(result,
+                         self.amity.error_codes[17] + " 'test_database/'")
         result = self.amity.save_state('test_database*')
-        self.assertEqual(result, self.amity.error_codes[17] + " 'test_database*'")
+        self.assertEqual(result,
+                         self.amity.error_codes[17] + " 'test_database*'")
 
     # Load State Tests
     # *****************************
 
-    def test_load_state_raises_type_error_when_database_name_not_string_ie_number(self):
+    def test_load_state_raises_type_error_when_database_name_not_string_ie_number(
+            self):
         with self.assertRaises(TypeError):
             self.amity.load_state(42)
 
-    def test_load_state_raises_type_error_when_database_name_not_string_ie_list(self):
+    def test_load_state_raises_type_error_when_database_name_not_string_ie_list(
+            self):
         with self.assertRaises(TypeError):
             self.amity.load_state(["hello"])
 
     def test_load_state_gives_informative_message_when_database_is_empty(self):
 
         database_name = self.amity.empty_database
-        sqlite3.connect = MagicMock(return_value="No data to Load. Empty database '%s'" % database_name)
+        sqlite3.connect = MagicMock(
+            return_value="No data to Load. Empty database '%s'" %
+                         database_name)
         self.amity.load_state(database_name, "databases/")
 
-        self.assertEqual(self.amity.connection, "No data to Load. Empty database '%s'" % database_name)
+        self.assertEqual(self.amity.connection,
+                         "No data to Load. Empty database '%s'" % database_name)
 
-    def test_load_state_gives_informative_message_when_database_does_not_exist(self):
+    def test_load_state_gives_informative_message_when_database_does_not_exist(
+            self):
         database_name = "test_load_state_not_exist"
-        sqlite3.connect = MagicMock(return_value=self.amity.error_codes[18] + " '%s'" % database_name)
+        sqlite3.connect = MagicMock(
+            return_value=self.amity.error_codes[18] + " '%s'" % database_name)
         result = self.amity.load_state(database_name)
-        self.assertEqual(result, self.amity.error_codes[18] + " '%s'" % database_name)
+        self.assertEqual(result,
+                         self.amity.error_codes[18] + " '%s'" % database_name)
 
     def test_load_state_sqlite3_connect_fail_on_invalid_characters(self):
         sqlite3.connect = MagicMock(return_value='connection failed')
         result = self.amity.load_state('test_database/')
-        self.assertEqual(result, self.amity.error_codes[17] + " 'test_database/'")
+        self.assertEqual(result,
+                         self.amity.error_codes[17] + " 'test_database/'")
         result = self.amity.load_state('test_database*')
-        self.assertEqual(result, self.amity.error_codes[17] + " 'test_database*'")
+        self.assertEqual(result,
+                         self.amity.error_codes[17] + " 'test_database*'")
+
 
 if __name__ == '__main__':
     unittest.main()

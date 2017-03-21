@@ -8,8 +8,7 @@ class Person(object):
         # If not defined, id is None
         self.person_id = kwargs.pop('id', random.randrange(0, 99999))
         # If not defined, allocated_office_space is None
-        self.allocated_office_space = kwargs.pop('allocated_office_space',
-                                                 None)
+        self.allocated_office_space = kwargs.pop('allocated_office_space', None)
         self.first_name = first_name
         self.last_name = last_name
 
@@ -49,28 +48,7 @@ class Person(object):
             self.__first_name = ''.join(first_name.split())
 
     @property
-    def last_name(self):
-        """
-
-        :return:
-        :rtype:
-        """
-        return self.__last_name
-
-    @last_name.setter
-    def last_name(self, last_name):
-        if last_name.islower() or last_name.istitle():
-            self.__last_name = ''.join(last_name.split()).title()
-        else:
-            self.__last_name = ''.join(last_name.split())
-
-    @property
     def allocated_office_space(self):
-        """
-
-        :return:
-        :rtype:
-        """
         return self.__allocated_office_space
 
     @allocated_office_space.setter
@@ -93,6 +71,22 @@ class Person(object):
         else:
             self.__allocated_office_space = None
 
+    @property
+    def last_name(self):
+        """
+
+        :return:
+        :rtype:
+        """
+        return self.__last_name
+
+    @last_name.setter
+    def last_name(self, last_name):
+        if last_name.islower() or last_name.istitle():
+            self.__last_name = ''.join(last_name.split()).title()
+        else:
+            self.__last_name = ''.join(last_name.split())
+
 
 class Staff(Person):
 
@@ -103,13 +97,13 @@ class Staff(Person):
 class Fellow(Person):
 
     def __init__(self, *args, **kwargs):
-        super(Fellow, self).__init__(*args, **kwargs)
         # Default is None
         self.allocated_living_space = kwargs.pop(
                 'allocated_living_space', None)
         # Default is False, meaning No
         self.wants_accommodation = kwargs.pop(
                 'wants_accommodation', False)
+        super(Fellow, self).__init__(*args, **kwargs)
 
     @property
     def allocated_living_space(self):
@@ -119,14 +113,6 @@ class Fellow(Person):
         :rtype:
         """
         return self.__allocated_living_space
-
-    @property
-    def allocated_office_space(self):
-        """
-
-        :return:
-        :rtype:
-        """
 
     @allocated_living_space.setter
     def allocated_living_space(self, living_space):

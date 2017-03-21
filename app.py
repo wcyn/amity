@@ -28,14 +28,17 @@ Usage:
     quit
 
 Arguments
-    <room_name>           The name of the room to be created or printed. Add '-ls' at the end of the room name to
+    <room_name>           The name of the room to be created or printed.
+                          Add '-ls' at the end of the room name to
                           indicate that it is a living space. Default is office
     <first_name>          The first name of the Fellow or Staff
     <last_name>           The last name of the Fellow or Staff
     <role>                The role of the new person, either Fellow or Staff
-    <wants_accommodation> Indication of if the Fellow wants accommodation or not. Choices ('N','No', 'Yes','Y')
+    <wants_accommodation> Indication of if the Fellow wants accommodation or
+                          not. Choices ('N','No', 'Yes','Y')
     <person_identifier>   A Unique User identifier of the Fellow or Staff
-    <new_room_name>       The Room name to which the Fellow or Staff is to be reallocated
+    <new_room_name>       The Room name to which the Fellow or Staff is to be
+                          reallocated
     <filename>            The file to load from or save data to
     <sqlite_database>     The database to load from or save data to
 
@@ -111,14 +114,18 @@ def pretty_print_data(list_of_dicts):
     :param list_of_dicts:
     :type list_of_dicts:
     """
+    key_list = [key for key in list_of_dicts[0].keys()]
     if list_of_dicts:
-        key_list = [colored(key.title().split('__')[-1], 'green') for key in list_of_dicts[0].keys()]
-        table_rows = [key_list]
+        formatted_key_list = [
+            colored(key.title().split('__')[-1], 'green') for key in
+            list_of_dicts[0].keys()]
+        table_rows = [formatted_key_list]
 
-        for object in list_of_dicts:
-            row_data = []
-            for key, value in object.items():
-                row_data.append(colored(value, 'blue'))
+        for obj in list_of_dicts:
+            # Initialize row data with Null values to enable indexing
+            row_data = [None] * len(key_list)
+            for key, value in obj.items():
+                row_data[key_list.index(key)] = (colored(value, 'blue'))
             table_rows.append(row_data)
     else:
         table_rows = [["No data to Print"]]
@@ -132,7 +139,7 @@ def print_subtitle(text):
     :param text:
     :type text:
     """
-    cprint("\n\n%s\n%s" % (text,"-" * len(text)), 'cyan')
+    cprint("\n\n%s\n%s" % (text, "-" * len(text)), 'cyan')
 
 
 def print_info(text):
@@ -157,8 +164,9 @@ class AmityInteractive(cmd.Cmd):
     """
         The Amity Command Line Interface to be used for User interaction
     """
-    intro = colored("\nWelcome to my Amity!" \
-            + "\n\t<Type 'help' to see the list of available commands>\n", 'blue', attrs=['dark'])
+    intro = colored("\nWelcome to my Amity!"
+                    + "\n\t<Type 'help' to see the list of available "
+                      "commands>\n", 'blue', attrs=['dark'])
 
     amity_prompt = colored('Amity # ', 'yellow', attrs=['bold'])
     prompt = amity_prompt
@@ -238,11 +246,13 @@ class AmityInteractive(cmd.Cmd):
         person = amity.get_person_object_from_id(person_id)
         room = amity.get_room_object_from_name(new_room_name)
         if not person:
-            print_info("Person with the ID '%s' does not exist" % (person_id))
+            print_info("Person with the ID '%s' does not exist" % person_id)
         if not room:
-            print_info("A room with the name '%s' does not exist" % (new_room_name))
+            print_info("A room with the name '%s' does not exist" %
+                       new_room_name)
         if person and room:
-            reallocation = amity.allocate_room_to_person(person, new_room_name, True)
+            reallocation = amity.allocate_room_to_person(
+                    person, new_room_name, True)
             if not isinstance(reallocation, str):
                 if isinstance(person, Staff):
                     person_data = amity.translate_staff_data_to_dict([person])
@@ -264,14 +274,16 @@ class AmityInteractive(cmd.Cmd):
         if isinstance(loaded_people, str):
             print_error(loaded_people)
         else:
-            fellows = [fellow for fellow in loaded_people if isinstance(fellow, Fellow)]
-            staff = [staff for staff in loaded_people if isinstance(staff, Staff)]
+            fellows = [fellow for fellow in loaded_people if isinstance(
+                    fellow, Fellow)]
+            staff = [staff for staff in loaded_people if isinstance(
+                    staff, Staff)]
             fellow_data = amity.translate_fellow_data_to_dict(fellows)
 
             staff_data = amity.translate_staff_data_to_dict(staff)
 
             print_subtitle("Newly Created People from File")
-            pretty_print_data(fellow_data + staff_data)
+            pretty_print_data(staff_data + fellow_data)
 
     @docopt_cmd
     def do_print_allocations(self, args):
@@ -283,14 +295,15 @@ class AmityInteractive(cmd.Cmd):
         if isinstance(allocations, str):
             print_error(allocations)
         else:
-            fellows = [fellow for fellow in allocations if isinstance(fellow, Fellow)]
+            fellows = [fellow for fellow in allocations if isinstance(
+                    fellow, Fellow)]
             staff = [staff for staff in allocations if isinstance(staff, Staff)]
             fellow_data = amity.translate_fellow_data_to_dict(fellows)
 
             staff_data = amity.translate_staff_data_to_dict(staff)
 
             print_subtitle("Amity Allocations")
-            pretty_print_data(fellow_data + staff_data)
+            pretty_print_data(staff_data + fellow_data)
 
     @docopt_cmd
     def do_print_unallocated(self, args):
@@ -345,8 +358,11 @@ class AmityInteractive(cmd.Cmd):
 
 
     @staticmethod
-    def do_quit():
-        """ Quits Amity """
+    def do_quit(args):
+        """ Quits Amity
+        :param args:
+        :type args:
+        """
         print("Ciao!")
         exit()
 
