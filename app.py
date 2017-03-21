@@ -193,8 +193,10 @@ class AmityInteractive(cmd.Cmd):
 
         if isinstance(new_rooms, str):
             print(new_rooms)
-        offices = [office for office in new_rooms if isinstance(office, Office)]
-        living_spaces = [living_space for living_space in new_rooms if isinstance(living_space, LivingSpace)]
+        offices = [office for office in new_rooms if isinstance(
+                office, Office)]
+        living_spaces = [living_space for living_space in new_rooms if
+                         isinstance(living_space, LivingSpace)]
         room_data = amity.translate_room_data_to_dict(offices, living_spaces)
         print_subtitle("Newly Created Rooms")
         pretty_print_data(room_data)
@@ -207,26 +209,35 @@ class AmityInteractive(cmd.Cmd):
         Arguments:
             <first_name> User's first name
             <last_name> User's last name
-            <role> specifies the role of the person being added ('Fellow' or 'Staff')
-            [<wants_accommodation>] Indicates if user wants accommodation or not. It only accepts 'Y','Yes','No'or 'N'
+            <role> specifies the role of the person being added
+            ('Fellow' or 'Staff')
+            [<wants_accommodation>] Indicates if user wants accommodation or
+            not. It only accepts 'Y','Yes','No'or 'N'
 
-        Usage: add_person <first_name> <last_name> <role> [<wants_accommodation>]
+        Usage:
+            add_person <first_name> <last_name> <role> [<wants_accommodation>]
         """
         first_name = args['<first_name>']
         last_name = args['<last_name>']
         role = args['<role>']
-        if role not in amity.allowed_fellow_strings + amity.allowed_staff_strings:
-            print_info("Invalid arguments. \n- <role> can either be 'Fellow' or 'Staff' ")
+        if role not in amity.allowed_fellow_strings + \
+                amity.allowed_staff_strings:
+            print_info("Invalid arguments. \n- <role>  can either be "
+                       "'Fellow' or 'Staff' ")
             return
         wants_accommodation = args['<wants_accommodation>'] or 'N'
-        if wants_accommodation.lower() not in amity.allowed_yes_strings + amity.allowed_no_strings:
-            print_info("Invalid  arguments. \n- <wants_accommodation> can either be among %s" % (
-                amity.allowed_yes_strings + amity.allowed_no_strings
-            ))
+        if wants_accommodation.lower() not in amity.allowed_yes_strings + \
+                amity.allowed_no_strings:
+            print_info("Invalid  arguments. \n- <wants_accommodation> can "
+                       "either be among %s" % (
+                        amity.allowed_yes_strings + amity.allowed_no_strings
+                        ))
             return
-        wants_accommodation = True if wants_accommodation in amity.allowed_yes_strings else False
+        wants_accommodation = True if wants_accommodation in \
+            amity.allowed_yes_strings else False
 
-        new_person = amity.add_person(first_name, last_name, role, wants_accommodation)
+        new_person = amity.add_person(first_name, last_name, role,
+                                      wants_accommodation)
         if not isinstance(new_person, str):
             if isinstance(new_person, str):
                 print_error(new_person)
@@ -303,7 +314,8 @@ class AmityInteractive(cmd.Cmd):
         else:
             fellows = [fellow for fellow in allocations if isinstance(
                     fellow, Fellow)]
-            staff = [staff for staff in allocations if isinstance(staff, Staff)]
+            staff = [staff for staff in allocations if isinstance(
+                    staff, Staff)]
             fellow_data = amity.translate_fellow_data_to_dict(fellows)
 
             staff_data = amity.translate_staff_data_to_dict(staff)
