@@ -8,7 +8,8 @@ class Person(object):
         # If not defined, id is None
         self.person_id = kwargs.pop('id', random.randrange(0, 99999))
         # If not defined, allocated_office_space is None
-        self.allocated_office_space = kwargs.pop('allocated_office_space', None)
+        self.allocated_office_space = kwargs.pop('allocated_office_space',
+                                                 None)
         self.first_name = first_name
         self.last_name = last_name
 

@@ -114,8 +114,9 @@ def pretty_print_data(list_of_dicts):
     :param list_of_dicts:
     :type list_of_dicts:
     """
-    key_list = [key for key in list_of_dicts[0].keys()]
+
     if list_of_dicts:
+        key_list = [key for key in list_of_dicts[0].keys()]
         formatted_key_list = [
             colored(key.title().split('__')[-1], 'green') for key in
             list_of_dicts[0].keys()]
@@ -168,7 +169,7 @@ class AmityInteractive(cmd.Cmd):
                     + "\n\t<Type 'help' to see the list of available "
                       "commands>\n", 'blue', attrs=['dark'])
 
-    amity_prompt = colored('Amity # ', 'yellow', attrs=['bold'])
+    amity_prompt = colored('Amity # ', 'blue', attrs=['bold'])
     prompt = amity_prompt
 
     @docopt_cmd
@@ -183,7 +184,6 @@ class AmityInteractive(cmd.Cmd):
         Usage: create_room <room_name>... [-l|-o]
         """
         rooms = args['<room_name>']
-        print("Args: ", args)
 
         if args['-l']:
             new_rooms = amity.create_room(rooms, 'living-space')
@@ -192,7 +192,7 @@ class AmityInteractive(cmd.Cmd):
             new_rooms = amity.create_room(rooms)
 
         if isinstance(new_rooms, str):
-            print(new_rooms)
+            print_error(new_rooms)
         offices = [office for office in new_rooms if isinstance(
                 office, Office)]
         living_spaces = [living_space for living_space in new_rooms if
@@ -220,7 +220,7 @@ class AmityInteractive(cmd.Cmd):
         first_name = args['<first_name>']
         last_name = args['<last_name>']
         role = args['<role>']
-        if role not in amity.allowed_fellow_strings + \
+        if role.lower() not in amity.allowed_fellow_strings + \
                 amity.allowed_staff_strings:
             print_info("Invalid arguments. \n- <role>  can either be "
                        "'Fellow' or 'Staff' ")
