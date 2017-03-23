@@ -2,54 +2,22 @@ import re
 import sys
 import sqlite3
 import random
+import time
 
 from pathlib import Path
 
 from termcolor import cprint
 
-from models.room import LivingSpace, Office
-from .person import Staff, Fellow
+from models.config import Config
+from models.room import LivingSpace, Office, Room
+from models.person import Staff, Fellow
 
 
 class Amity(object):
-    out = sys.stdout
     offices = []  # List of Office objects
     living_spaces = []  # List of LivingSpace objects
     fellows = []  # List of Fellow objects
     staff = []  # List of Staff objects
-    connection = None
-    database_directory = '../databases/'
-    files_directory = '../files/'
-    default_db_name = '*amity_database'
-    empty_database = "*amity_empty"
-    special_databases = [default_db_name, empty_database]
-
-    allowed_fellow_strings = ["fellow", "f"]
-    allowed_staff_strings = ["staff", "s"]
-    allowed_office_strings = ["office", "o"]
-    allowed_living_space_strings = ["living_space", "ls", "living-space", "l"]
-    allowed_yes_strings = ["yes", "y"]
-    allowed_no_strings = ["no", "n"]
-    error_codes = {
-        1: "Room does not exist",
-        2: "Person does not exist",
-        3: "Cannot create a duplicate room",
-        4: "Cannot create a duplicate person",
-        5: "Invalid person type",
-        6: "Invalid room type",
-        7: "Invalid accommodation option",
-        8: "No room name was provided",
-        9: "Person name was not provided",
-        10: "Cannot allocate a living space to a staff member",
-        11: "Cannot add person. The room is fully occupied",
-        12: "Cannot find the file",
-        13: "The file is empty",
-        14: "Wrongly formatted file",
-        15: "Invalid characters in the filename",
-        16: "The room is empty",
-        17: "Invalid character(s) in the database name",
-        18: "Non-existent database"
-    }
 
     def create_room(self, room_names, room_type='office'):
         """
@@ -65,7 +33,7 @@ class Amity(object):
         if not isinstance(room_names, list):
             return "Only a list of strings is allowed"
         if not len(room_names):
-            return self.error_codes[8]
+            return Config.error_codes[8]
 
         room_names = set(room_names)
         for room_name in room_names:
@@ -74,7 +42,7 @@ class Amity(object):
             if room_name.lower() not in ([room.name.lower() for room in
                                           self.get_all_rooms()]):
                 try:
-                    if room_type in self.allowed_living_space_strings:
+                    if room_type in Config.allowed_living_space_strings:
                         new_living_space = LivingSpace(room_name)
                         self.living_spaces.append(new_living_space)
                         new_rooms.append(new_living_space)
@@ -88,7 +56,7 @@ class Amity(object):
                     self.print_info(e)
                     raise e
             else:
-                return self.error_codes[3] + " '%s'" % room_name
+                return Config.error_codes[3] + " '%s'" % room_name
         return new_rooms
 
     def add_person(self, first_name, last_name, role,
@@ -107,60 +75,73 @@ class Amity(object):
         :rtype:
         """
         if not isinstance(wants_accommodation, bool):
-            return self.error_codes[7] + " '%s'" % wants_accommodation
+            return Config.error_codes[7] + " '%s'" % wants_accommodation
         try:
-            if role.lower() in self.allowed_fellow_strings:
+            if role.lower() in Config.allowed_fellow_strings:
                 new_person = Fellow(first_name, last_name)
                 new_person.wants_accommodation = wants_accommodation
                 self.fellows.append(new_person)
-            elif role.lower() in self.allowed_staff_strings:
+
+            elif role.lower() in Config.allowed_staff_strings:
                 new_person = Staff(first_name, last_name)
                 self.staff.append(new_person)
             else:
-                return self.error_codes[5] + " '%s'" % role
-
+                return Config.error_codes[5] + " '%s'" % role
             # Randomly allocate office to new person
             if not self.offices:
                 self.print_info("There exists no offices to assign to "
                                 "'%s %s'" % (new_person.first_name,
                                              new_person.last_name))
             else:
-                self.print_info("Randomly allocating office to %s..." %
-                                new_person.first_name)
                 room = self.randomly_allocate_room(
-                        new_person, self.allowed_office_strings[0])
-                self.print_info_result("Allocated office: %s" % room.name)
+                    new_person, Config.allowed_office_strings[0])
+                if room:
+                    self.print_info("Randomly allocating office to %s..." %
+                                    new_person.first_name)
+                    time.sleep(1)
+                    self.print_info_result("Allocated office: %s" % room.name)
+                else:
+                    self.print_info("All offices are full. No office to "
+                                    "assign to '%s %s'" %
+                                    (new_person.first_name,
+                                     new_person.last_name))
 
             if wants_accommodation:
-                if role.lower() in self.allowed_fellow_strings:
+                if role.lower() in Config.allowed_fellow_strings:
                     # Randomly assign available living space to fellow
                     if not self.living_spaces:
                         self.print_info(
-                                "There exists no living space to assign "
-                                "fellow to")
+                            "There exists no living space to assign "
+                            "fellow to")
                     else:
                         self.print_info("Randomly allocating living space to "
                                         "%s..." % new_person.first_name)
+                        time.sleep(1)
                         room = self.randomly_allocate_room(
-                                new_person,
-                                self.allowed_living_space_strings[0])
-                        self.print_info_result(
-                                "Allocated living space: %s" % room.name)
+                            new_person,
+                            Config.allowed_living_space_strings[0])
+
                         if room:
+                            self.print_info_result(
+                                "Allocated living space: %s" % room.name)
                             # Reset wants accommodation to False since they now
                             # have accommodation
                             new_person.wants_accommodation = False
+                        else:
+                            self.print_info(
+                                "All living spaces are full. No living space "
+                                "to assign to '%s %s'" %
+                                (new_person.first_name, new_person.last_name))
                 else:
                     self.print_error("Staff cannot be allocated a Living "
                                      "Space")
-
             return new_person
 
-        except TypeError as e:
-            raise e
-        except Exception as e:
-            self.print_info(e)
-            raise e
+        except TypeError as error:
+            raise error
+        except Exception as error:
+            self.print_info(error)
+            raise error
 
     def allocate_room_to_person(self, person, room, reallocate=False):
         """
@@ -178,7 +159,7 @@ class Amity(object):
             if room.get_max_occupants() - room.num_of_occupants:
                 # Should not assign a living space to a staff member
                 if isinstance(person, Staff) and isinstance(room, LivingSpace):
-                    return self.error_codes[10]
+                    return Config.error_codes[10]
 
                 already_allocated_office = isinstance(
                         room, Office) and isinstance(
@@ -205,7 +186,7 @@ class Amity(object):
                     person.allocated_living_space = room
 
             else:
-                return self.error_codes[11]
+                return Config.error_codes[11]
             return person
         except AttributeError as e:
             raise e
@@ -222,9 +203,9 @@ class Amity(object):
         :return:
         :rtype:
         """
-        if room_type not in self.allowed_living_space_strings + \
-                self.allowed_office_strings:
-            return self.error_codes[6] + " '%s'" % room_type
+        if room_type not in Config.allowed_living_space_strings + \
+                Config.allowed_office_strings:
+            return Config.error_codes[6] + " '%s'" % room_type
 
         offices_not_full = [office for office in self.offices
                             if office.get_max_occupants() -
@@ -235,7 +216,7 @@ class Amity(object):
                                   living_space.num_of_occupants]
 
         data = None
-        if room_type in self.allowed_office_strings:
+        if room_type in Config.allowed_office_strings:
             if offices_not_full:
                 # Randomly select an non full office
                 office = random.choice(offices_not_full)
@@ -260,7 +241,7 @@ class Amity(object):
             with open(filename) as f:
                 people = f.readlines()
             if not len(" ".join([i.strip() for i in people])):
-                return self.error_codes[13] + " '%s'" % filename
+                return Config.error_codes[13] + " '%s'" % filename
 
             loaded_people = []
             for person in people:
@@ -270,16 +251,17 @@ class Amity(object):
                             re.IGNORECASE):
                     # proceed to create the objects else ignore the bad line
                     person_data = person.strip().split()
-                    if person_data[2].lower() in self.allowed_fellow_strings:
+                    if person_data[2].lower() in Config.allowed_fellow_strings:
                         fellow = self.add_person(
                                 person_data[0], person_data[1],
-                                self.allowed_fellow_strings[0])
+                                Config.allowed_fellow_strings[0])
                         loaded_people.append(fellow)
-                    elif person_data[2].lower() in self.allowed_staff_strings:
+                    elif person_data[2].lower() in \
+                            Config.allowed_staff_strings:
                         staff = self.add_person(
                                 person_data[0],
                                 person_data[1],
-                                self.allowed_staff_strings[0])
+                                Config.allowed_staff_strings[0])
                         loaded_people.append(staff)
                 else:
                     self.print_info("Ignoring badly formatted line: %s " %
@@ -287,12 +269,12 @@ class Amity(object):
 
             if not loaded_people:
                 # None of the lines had the required format
-                return self.error_codes[14] + " '%s'" % filename
+                return Config.error_codes[14] + " '%s'" % filename
             return loaded_people
 
         except FileNotFoundError as e:
             self.print_info(e)
-            return self.error_codes[12] + " '%s'" % filename
+            return Config.error_codes[12] + " '%s'" % filename
         except TypeError as e:
             raise e
         except Exception as e:
@@ -308,6 +290,7 @@ class Amity(object):
         """
         try:
             allocated_staff = self.get_allocated_staff()
+
             fellows_allocated_both = self.get_fellows_allocated_both()
             fellows_with_only_living_space = \
                 self.get_fellows_with_living_space_only()
@@ -317,7 +300,6 @@ class Amity(object):
                 + fellows_with_only_living_space \
                 + fellows_with_only_office_space
             allocations = allocated_staff + allocated_fellows
-            print("Allocated data!: ", allocations)
             if not allocations:
                 return "No allocations to print"
 
@@ -330,10 +312,6 @@ class Amity(object):
                      fellow.allocated_office_space.name,
                      fellow.allocated_living_space.name, '\n'))
                      for fellow in fellows_allocated_both]
-            print("Fellows with only living space: ",
-                  fellows_with_only_living_space)
-            print("Fellows with only office space: ",
-                  fellows_with_only_office_space)
             fellows_with_only_living_space_print = [' '.join(
                     (fellow.first_name, fellow.last_name, "Fellow", "-",
                      fellow.allocated_living_space.name, '\n'))
@@ -423,7 +401,6 @@ class Amity(object):
         if rooms:
             if room_name in [room.name.lower() for room in rooms]:
                 for staff in self.staff:
-                    print("\n Staff has room? : ", staff.__dict__)
                     if isinstance(staff.allocated_office_space, Office):
                         if room_name == \
                                 staff.allocated_office_space.name.lower():
@@ -431,7 +408,6 @@ class Amity(object):
                                 staff.first_name, staff.last_name, "Staff"))
                             people_count += 1
                 for fellow in self.fellows:
-                    print("\n Fellow has room? : ", fellow.__dict__)
                     if isinstance(fellow.allocated_office_space, Office):
                         if room_name == \
                                 fellow.allocated_office_space.name.lower():
@@ -448,10 +424,10 @@ class Amity(object):
 
                 if not people_count:
                     # Room is empty
-                    return self.error_codes[16] + ": '%s'" % room_name
+                    return Config.error_codes[16] + ": '%s'" % room_name
             else:
                 # Room does not exist
-                return self.error_codes[1] + ": '%s'" % room_name
+                return Config.error_codes[1] + ": '%s'" % room_name
         else:
             return "There are no rooms yet"
 
@@ -471,11 +447,11 @@ class Amity(object):
             if database_name:
                 if set('[~!@#$%^&*()+{}"/\\:;\']+$').intersection(
                         database_name):
-                    return self.error_codes[17] + " '%s'" % database_name
+                    return Config.error_codes[17] + " '%s'" % database_name
             else:
-                database_name = self.default_db_name
+                database_name = Config.default_db_name
 
-            db_file = self.database_directory + database_name
+            db_file = Config.database_directory + database_name
             db_path = Path(db_file)
 
             if not self.offices + self.living_spaces + self.fellows \
@@ -485,9 +461,9 @@ class Amity(object):
             if db_path.is_file() and not override:
                 return "About to override database '%s'" % database_name
 
-            self.connection = sqlite3.connect(db_file)
-            if isinstance(self.connection, sqlite3.Connection):
-                cursor = self.connection.cursor()
+            connection = sqlite3.connect(db_file)
+            if isinstance(connection, sqlite3.Connection):
+                cursor = connection.cursor()
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS rooms
                     (name varchar(50) PRIMARY KEY,
@@ -527,13 +503,13 @@ class Amity(object):
                                        "values (?, ?, ?, ?, ?, ?, ?)",
                                        self.tuplize_staff_data(self.staff))
 
-                self.connection.commit()
-                self.connection.close()
+                connection.commit()
+                connection.close()
             else:
-                print("Data not saved")
+                self.print_info("Data not saved")
 
         except Exception as e:
-            print("Error: ", e)
+            self.print_error("Error: %s" % e)
             raise e
 
     def load_state(self, database_name=None, path=None):
@@ -548,33 +524,32 @@ class Amity(object):
         """
         try:
             if database_name:
-                print("Functioning?")
                 print("db_name: ", database_name)
                 if set('[~!@#$%^&*()+{}"/\\:;\']+$').intersection(
                         database_name) and database_name not in \
-                        self.special_databases:
-                    return self.error_codes[17] + " '%s'" % database_name
+                        Config.special_databases:
+                    return Config.error_codes[17] + " '%s'" % database_name
             else:
-                database_name = self.default_db_name
+                database_name = Config.default_db_name
 
             if path:
                 database_file_path = path + "/" + database_name
             else:
-                database_file_path = self.database_directory + database_name
+                database_file_path = Config.database_directory + database_name
             print("DB File path: ", database_file_path)
 
             db_path = Path(database_file_path)
 
             if not db_path.is_file():
                 print("DB not exist: ", database_file_path)
-                return self.error_codes[18] + " '%s'" % database_name
+                return Config.error_codes[18] + " '%s'" % database_name
             else:
                 print("DATABASE EXISTS: ", database_name)
 
-            self.connection = sqlite3.connect(database_file_path)
-            if isinstance(self.connection, sqlite3.Connection):
-                print("Loading data from the database...")
-                cursor = self.connection.cursor()
+            connection = sqlite3.connect(database_file_path)
+            if isinstance(connection, sqlite3.Connection):
+                self.print_info("Loading data from the database...")
+                cursor = connection.cursor()
                 # Check if database is empty
                 cursor.execute(
                         "SELECT name FROM sqlite_master WHERE type='table' "
@@ -593,7 +568,7 @@ class Amity(object):
                 room_objects = self.add_room_database_data_to_amity(rooms)
                 people_objects = self.add_people_database_data_to_amity(people)
 
-                self.connection.close()
+                connection.close()
                 return {"people": people_objects, "rooms": room_objects}
         except Exception as e:
             raise e
@@ -608,7 +583,7 @@ class Amity(object):
         """
         loaded_people = []
         for person in people_list:
-            if person[3].lower() in self.allowed_fellow_strings:
+            if person[3].lower() in Config.allowed_fellow_strings:
                 if person[0] in [person.person_id for person in self.fellows]:
                     # get fellow with similar id and apply values
                     fellow = [p for p in self.get_all_people()
@@ -633,7 +608,7 @@ class Amity(object):
                     # Only append new fellow
                     self.fellows.append(fellow)
                     loaded_people.append(fellow)
-            elif person[3].lower() in self.allowed_staff_strings:
+            elif person[3].lower() in Config.allowed_staff_strings:
                 if person[0] in [person.person_id for person in self.fellows]:
                     # get staff with similar id and apply values
                     staff = [p for p in self.get_all_people()
@@ -662,13 +637,12 @@ class Amity(object):
         :rtype:
         """
         loaded_rooms = []
-        print("Room list:", room_list)
         for room in room_list:
-            if room[1].lower() in self.allowed_office_strings:
+            if room[1].lower() in Config.allowed_office_strings:
                 office = Office(room[0])
                 self.offices.append(office)
                 loaded_rooms.append(office)
-            elif room[1].lower() in self.allowed_living_space_strings:
+            elif room[1].lower() in Config.allowed_living_space_strings:
                 living_space = LivingSpace(room[0])
                 self.living_spaces.append(living_space)
                 loaded_rooms.append(living_space)
@@ -861,15 +835,25 @@ class Amity(object):
         :return:
         :rtype:
         """
-        fellow_dict_list = [fellow.__dict__ for fellow in fellow_list]
-        for fellow in fellow_dict_list:
-            if fellow['_Person__allocated_office_space']:
-                fellow['_Person__allocated_office_space'] = \
-                    fellow['_Person__allocated_office_space'].name
-            if fellow['_Fellow__allocated_living_space']:
-                fellow['_Fellow__allocated_living_space'] = \
-                    fellow['_Fellow__allocated_living_space'].name
-            fellow['role'] = "fellow"
+        fellow_dict_list = []
+        for fellow in fellow_list:
+            fellow_dict = {}
+            for key, value in fellow.__dict__.items():
+                if issubclass(type(value), Room):
+                    value = value.name
+                fellow_dict[key] = value
+            fellow_dict['role'] = "fellow"
+            fellow_dict_list.append(fellow_dict)
+
+        # fellow_dict_list = [fellow.__dict__ for fellow in fellow_list]
+        # for fellow in fellow_dict_list:
+        #     if fellow['_Person__allocated_office_space']:
+        #         fellow['_Person__allocated_office_space'] = \
+        #             fellow['_Person__allocated_office_space'].name
+        #     if fellow['_Fellow__allocated_living_space']:
+        #         fellow['_Fellow__allocated_living_space'] = \
+        #             fellow['_Fellow__allocated_living_space'].name
+        #     fellow['role'] = "fellow"
         return fellow_dict_list
 
     @staticmethod
@@ -881,15 +865,28 @@ class Amity(object):
         :return:
         :rtype:
         """
-        staff_dict_list = [staff.__dict__ for staff in staff_list]
-        for staff in staff_dict_list:
-            if staff['_Person__allocated_office_space']:
-                staff['_Person__allocated_office_space'] = \
-                    staff['_Person__allocated_office_space'].name
-            # In order to match with the fellows (for table printing).
-            staff['_Fellow__allocated_living_space'] = 'N/A'
-            staff['_Fellow__wants_accommodation'] = 'N/A'
-            staff['role'] = "staff"
+        staff_dict_list = []
+        for staff in staff_list:
+            staff_dict = {}
+            for key, value in staff.__dict__.items():
+                if issubclass(type(value), Room):
+
+                    value = value.name
+                staff_dict[key] = value
+            staff_dict['_Fellow__allocated_living_space'] = 'N/A'
+            staff_dict['_Fellow__wants_accommodation'] = 'N/A'
+            staff_dict['role'] = "staff"
+            staff_dict_list.append(staff_dict)
+
+        # staff_dict_list = [staff.__dict__ for staff in staff_list]
+        # for staff in staff_dict_list:
+        #     if staff['_Person__allocated_office_space']:
+        #         staff['_Person__allocated_office_space'] = \
+        #             staff['_Person__allocated_office_space'].name
+        #     # In order to match with the fellows (for table printing).
+        #     staff['_Fellow__allocated_living_space'] = 'N/A'
+        #     staff['_Fellow__wants_accommodation'] = 'N/A'
+        #     staff['role'] = "staff"
         return staff_dict_list
 
     @staticmethod
@@ -947,3 +944,22 @@ class Amity(object):
         """
         cprint("\t%s" % text, 'red')\
 
+
+#
+# jane = Fellow("Jane", "Kay")
+# camelot = Office("Camelot")
+#
+# a = Amity()
+# a.offices = [camelot]
+# jane.allocated_office_space = camelot
+#
+# a.add_person("Kate", "Mitch", "staff")
+# a.add_person("Maria", "Mitch", "staff")
+#
+# people = a.get_all_people()
+# for person in people:
+#     print("Person: ", person.__dict__)
+#
+# print("\nJane: ", jane.__dict__)
+# print("\nKate: ", a.staff[0].__dict__)
+# print("\nMaria: ", str(a.staff[1].__dict__))

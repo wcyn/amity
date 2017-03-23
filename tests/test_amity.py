@@ -41,9 +41,9 @@ class TestAmity(unittest.TestCase):
         self.assertEqual(self.amity.offices, [
             self.office] + new_rooms)
 
-    def test_create_room_adds_living_spaces_when_suffixed_with_ls(self):
+    def test_create_room_adds_living_spaces_on_living_space_option(self):
         # Create room should return a list of created room objects
-        bee = self.amity.create_room(["bee-ls"])
+        bee = self.amity.create_room(["bee"], "ls")
         self.assertEqual(self.amity.living_spaces, [self.living_space] + bee)
         self.assertEqual(self.amity.living_spaces[1].name, "Bee")
 

@@ -15,7 +15,7 @@ Usage:
     app.py print_room <room_name>
     app.py save_state [--db=sqlite_database]
     app.py load_state [<sqlite_database>]
-    app.py list_people
+    app.py list_people [-f|-s]
     app.py list_fellows
     app.py list_staff
     app.py list_rooms
@@ -83,8 +83,8 @@ def docopt_cmd(func):
             opt = docopt(fn.__doc__, args)
         except DocoptExit as error:
             # The DocoptExit is thrown when the arguments do not match
-            print('Invalid Command Entered!')
-            print(error)
+            print_error('Invalid Command Entered!')
+            print_error(error)
             return
         except SystemExit:
             # The SystemExit exception prints the usage for --help
@@ -158,7 +158,9 @@ def print_error(text):
     :param text:
     :type text:
     """
-    cprint("\n%s\n%s\n%s" % ("-"*len(text), text, "-"*len(text)), 'magenta')
+    if isinstance(text, str):
+        cprint("\n%s\n%s\n%s" % ("-"*len(text), text,
+                                 "-"*len(text)), 'magenta')
 
 
 class AmityInteractive(cmd.Cmd):
@@ -381,23 +383,26 @@ class AmityInteractive(cmd.Cmd):
         :param args:
         :type args:
         """
-        print("Ciao!")
+        print("\nCiao!")
         exit()
 
-    # @docopt_cmd
-    # def do_list_people(self):
-    #     """
-    #     List everyone in amity.
-    #     """
-    #     if args['<sqlite_database>']:
-    #         path = args['<sqlite_database>'].split('/')[:-1]
-    #         database_name = args['<sqlite_database>'].split('/')[-1]
-    #         result = amity.load_state(database_name, path)
-    #     else:
-    #         result = amity.load_state()
-    #
-    #     if isinstance(result, str):
-    #         print_info(result)
+    @docopt_cmd
+    def do_list_people(self, args):
+        """
+        List everyone in amity.
+        Usage: list_people [-f|-s]
+        """
+        if args['-f']:
+            result = amity.fellows
+        elif args['-s']:
+            result = amity.staff
+        else:
+            result = amity.get_all_people()
+
+        if isinstance(result, str):
+            print_info(result)
+        else:
+            pretty_print_data(result)
     #
     # app.py
     # list_people
