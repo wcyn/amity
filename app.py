@@ -60,8 +60,9 @@ from docopt import docopt, DocoptExit
 from terminaltables import AsciiTable
 
 from models.amity import Amity
-from models.room import Office, LivingSpace
+from models.config import Config
 from models.person import Staff, Fellow
+from models.room import Office, LivingSpace
 
 
 def docopt_cmd(func):
@@ -69,6 +70,7 @@ def docopt_cmd(func):
     This decorator is used to simplify the try/except block and pass the result
     of the docopt parsing to the called action
     """
+
     def fn(self, args):
         """
 
@@ -80,16 +82,21 @@ def docopt_cmd(func):
         :rtype:
         """
         try:
-            opt = docopt(fn.__doc__, args)
+            option = docopt(fn.__doc__, args)
         except DocoptExit as error:
             # The DocoptExit is thrown when the arguments do not match
             print_error('Invalid Command Entered!')
+            fn_name = '_'.join(fn.__name__.split('_')[1:])
+            print_info('Type `help %s` to view the documentation for the `%s` '
+                       'command' % (fn_name, fn_name))
+            print_subtitle('Here is the usage for `%s`' % fn_name)
+            print_info(fn.__doc__.split('Usage:')[-1].strip())
             print_error(error)
             return
         except SystemExit:
             # The SystemExit exception prints the usage for --help
             return
-        return func(self, opt)
+        return func(self, option)
 
     fn.__name__ = func.__name__
     fn.__doc__ = func.__doc__
@@ -149,7 +156,7 @@ def print_info(text):
     :param text:
     :type text:
     """
-    cprint("\n%s" % text, 'blue')
+    cprint("%s" % text, 'yellow')
 
 
 def print_error(text):
@@ -159,8 +166,8 @@ def print_error(text):
     :type text:
     """
     if isinstance(text, str):
-        cprint("\n%s\n%s\n%s" % ("-"*len(text), text,
-                                 "-"*len(text)), 'magenta')
+        cprint("\n%s\n%s\n%s" % ("-" * len(text), text,
+                                 "-" * len(text)), 'magenta')
 
 
 class AmityInteractive(cmd.Cmd):
@@ -183,7 +190,8 @@ class AmityInteractive(cmd.Cmd):
                 is a living space.
                 Offices are created by default (i.e. if there is no '-l'
                 option)
-        Usage: create_room <room_name>... [-l|-o]
+        Usage:
+            create_room <room_name>... [-l|-o]
         """
         rooms = args['<room_name>']
 
@@ -196,7 +204,7 @@ class AmityInteractive(cmd.Cmd):
         if isinstance(new_rooms, str):
             print_error(new_rooms)
         offices = [office for office in new_rooms if isinstance(
-                office, Office)]
+            office, Office)]
         living_spaces = [living_space for living_space in new_rooms if
                          isinstance(living_space, LivingSpace)]
         room_data = amity.translate_room_data_to_dict(offices, living_spaces)
@@ -211,8 +219,7 @@ class AmityInteractive(cmd.Cmd):
         Arguments:
             <first_name> User's first name
             <last_name> User's last name
-            <role> specifies the role of the person being added
-            ('Fellow' or 'Staff')
+            <role> The role of the person being added ('Fellow' or 'Staff')
             [<wants_accommodation>] Indicates if user wants accommodation or
             not. It only accepts 'Y','Yes','No'or 'N'
 
@@ -222,21 +229,22 @@ class AmityInteractive(cmd.Cmd):
         first_name = args['<first_name>']
         last_name = args['<last_name>']
         role = args['<role>']
-        if role.lower() not in amity.allowed_fellow_strings + \
-                amity.allowed_staff_strings:
+        if role.lower() not in Config.allowed_fellow_strings + \
+                Config.allowed_staff_strings:
             print_info("Invalid arguments. \n- <role>  can either be "
                        "'Fellow' or 'Staff' ")
             return
         wants_accommodation = args['<wants_accommodation>'] or 'N'
-        if wants_accommodation.lower() not in amity.allowed_yes_strings + \
-                amity.allowed_no_strings:
+        if wants_accommodation.lower() not in Config.allowed_yes_strings + \
+                Config.allowed_no_strings:
             print_info("Invalid  arguments. \n- <wants_accommodation> can "
                        "either be among %s" % (
-                        amity.allowed_yes_strings + amity.allowed_no_strings
-                        ))
+                           Config.allowed_yes_strings +
+                           Config.allowed_no_strings
+                       ))
             return
         wants_accommodation = True if wants_accommodation in \
-            amity.allowed_yes_strings else False
+            Config.allowed_yes_strings else False
 
         new_person = amity.add_person(first_name, last_name, role,
                                       wants_accommodation)
@@ -271,7 +279,7 @@ class AmityInteractive(cmd.Cmd):
                        new_room_name)
         if person and room:
             reallocation = amity.allocate_room_to_person(
-                    person, new_room_name, True)
+                person, new_room_name, True)
             if not isinstance(reallocation, str):
                 if isinstance(person, Staff):
                     person_data = amity.translate_staff_data_to_dict([person])
@@ -294,9 +302,9 @@ class AmityInteractive(cmd.Cmd):
             print_error(loaded_people)
         else:
             fellows = [fellow for fellow in loaded_people if isinstance(
-                    fellow, Fellow)]
+                fellow, Fellow)]
             staff = [staff for staff in loaded_people if isinstance(
-                    staff, Staff)]
+                staff, Staff)]
             fellow_data = amity.translate_fellow_data_to_dict(fellows)
 
             staff_data = amity.translate_staff_data_to_dict(staff)
@@ -315,9 +323,9 @@ class AmityInteractive(cmd.Cmd):
             print_error(allocations)
         else:
             fellows = [fellow for fellow in allocations if isinstance(
-                    fellow, Fellow)]
+                fellow, Fellow)]
             staff = [staff for staff in allocations if isinstance(
-                    staff, Staff)]
+                staff, Staff)]
             fellow_data = amity.translate_fellow_data_to_dict(fellows)
 
             staff_data = amity.translate_staff_data_to_dict(staff)
@@ -403,22 +411,8 @@ class AmityInteractive(cmd.Cmd):
             print_info(result)
         else:
             pretty_print_data(result)
-    #
-    # app.py
-    # list_people
-    # app.py
-    # list_fellows
-    # app.py
-    # list_staff
-    # app.py
-    # list_rooms
-    # app.py
-    # list_offices
-    # app.py
-    # list_living_spaces
 
-
-opt = docopt(__doc__, sys.argv[1:])
+opt = docopt(__doc__, sys.argv[1:], True, 2.0)
 
 if opt['--interactive']:
     print_header()

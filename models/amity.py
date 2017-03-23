@@ -1,5 +1,4 @@
 import re
-import sys
 import sqlite3
 import random
 import time
@@ -20,12 +19,13 @@ class Amity(object):
     staff = []  # List of Staff objects
 
     def create_room(self, room_names, room_type='office'):
+
         """
 
-        :param room_type:
-        :type room_type:
         :param room_names:
         :type room_names:
+        :param room_type:
+        :type room_type:
         :return:
         :rtype:
         """
@@ -143,7 +143,8 @@ class Amity(object):
             self.print_info(error)
             raise error
 
-    def allocate_room_to_person(self, person, room, reallocate=False):
+    @staticmethod
+    def allocate_room_to_person(person, room, reallocate=False):
         """
 
         :param person:
@@ -955,6 +956,9 @@ class Amity(object):
 #
 # a.add_person("Kate", "Mitch", "staff")
 # a.add_person("Maria", "Mitch", "staff")
+# a.fellows += [jane]
+
+# a.save_state()
 #
 # people = a.get_all_people()
 # for person in people:

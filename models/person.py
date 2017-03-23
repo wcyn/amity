@@ -26,7 +26,7 @@ class Person(object):
         :return:
         :rtype:
         """
-        return int(self.__id)
+        return int(self.__person_id)
 
     @person_id.setter
     def person_id(self, person_id):
