@@ -133,8 +133,7 @@ class Amity(object):
                                 "to assign to '%s %s'" %
                                 (new_person.first_name, new_person.last_name))
                 else:
-                    self.print_error("Staff cannot be allocated a Living "
-                                     "Space")
+                    self.print_error(Config.error_codes[10])
             return new_person
 
         except TypeError as error:
@@ -156,6 +155,8 @@ class Amity(object):
         :return:
         :rtype:
         """
+        print("room '%s' and person '%s' allocate room to person" % (room,
+                                                                     person))
         try:
             if room.get_max_occupants() - room.num_of_occupants:
                 # Should not assign a living space to a staff member
@@ -190,8 +191,6 @@ class Amity(object):
                 return Config.error_codes[11]
             return person
         except AttributeError as e:
-            raise e
-        except Exception as e:
             raise e
 
     def randomly_allocate_room(self, person, room_type):
@@ -658,11 +657,15 @@ class Amity(object):
         :rtype:
         """
         if name:
-            room = [room for room in self.get_all_rooms() if
-                    room.name.lower() == name.lower()]
-            if room:
-                return room
-        return None
+            if isinstance(name, str):
+                room = [room for room in self.get_all_rooms() if
+                        room.name.lower() == name.lower()]
+                if room:
+                    return room[0]
+                else:
+                    return "The room %s does not exist" % name
+            else:
+                return "Room name must be a string"
 
     def get_person_object_from_id(self, person_id):
         """
@@ -673,11 +676,15 @@ class Amity(object):
         :rtype:
         """
         if person_id:
-            person = [person for person in self.get_all_people()
-                      if person.person_id == person_id]
+            try:
+                person_id = int(person_id)
+                person = [person for person in self.get_all_people()
+                          if person.person_id == person_id]
+            except ValueError as error:
+                return 'The person id must be an Integer'
             if person:
-                return person
-        return None
+                return person[0]
+        return "Person with the ID '%s' does not exist" % person_id
 
     def get_all_rooms(self):
         """
@@ -945,10 +952,11 @@ class Amity(object):
 
 
 
-# jane = Fellow("Jane", "Kay")
+jane = Fellow("Jane", "Kay")
 # camelot = Office("Camelot")
 #
-# a = Amity()
+a = Amity()
+# a.get_person_object_from_id(jane.person_id)
 # a.offices = [camelot]
 # jane.allocated_office_space = camelot
 #

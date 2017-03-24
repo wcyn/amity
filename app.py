@@ -115,26 +115,54 @@ def print_header():
     cprint("%sA ROOM ALLOCATION SYSTEM." % (" " * 14), 'cyan')
 
 
+def format_dict_keys(keys):
+    """
+    Generate a more readable string from the Dictionary Key
+    :param keys:
+    :type keys:
+    :return:
+    :rtype:
+    """
+    formatted = []
+    for key in keys:
+        formatted.append(' '.join(key.title().split('__')[-1].split('_')))
+    return formatted
+
+
+def color_list(items, color):
+    """
+    Color the list of strings with the specified color
+    :param items:
+    :type items:
+    :param color:
+    :type color:
+    :return: Returns the list of strings with the specified color
+    :rtype:
+    """
+    return [colored(item, color) for item in items]
+
+
 def pretty_print_data(list_of_dicts):
     """
 
     :param list_of_dicts:
     :type list_of_dicts:
     """
-
     if list_of_dicts:
-        key_list = [key for key in list_of_dicts[0].keys()]
-        formatted_key_list = [
-            colored(key.title().split('__')[-1], 'green') for key in
-            list_of_dicts[0].keys()]
-        table_rows = [formatted_key_list]
-        for obj in list_of_dicts:
-            row_data = []
-            table_rows.append([obj[key] if key in obj else 'N/A' for key in
-                               key_list])
+        max_len = max([len(d) for d in list_of_dicts])
+        headers = []
+        table_rows = []
+        for dict_item in list_of_dicts:
+            for key in dict_item.keys():
+                if key not in headers:
+                    headers.append(key)
+            table_rows.append(color_list([dict_item[key] if key in dict_item
+                              else 'N/A' for key in headers]
+                              + ((max_len - len(headers)) * ['N/A']), 'cyan'))
+        table_rows.insert(0,  color_list(format_dict_keys(headers), 'yellow'))
 
     else:
-        table_rows = [["No data to Print"]]
+        table_rows = [["No data to print"]]
     table = AsciiTable(table_rows)
     cprint(table.table, 'green')
 
@@ -270,24 +298,24 @@ class AmityInteractive(cmd.Cmd):
         new_room_name = args['<new_room_name>']
         person = amity.get_person_object_from_id(person_id)
         room = amity.get_room_object_from_name(new_room_name)
-        if not person:
-            print_info("Person with the ID '%s' does not exist" % person_id)
-        if not room:
-            print_info("A room with the name '%s' does not exist" %
-                       new_room_name)
-        if person and room:
+        if isinstance(person, str):
+            print_info(person)
+        elif isinstance(room, str):
+            print_info(room)
+        elif person and room:
             reallocation = amity.allocate_room_to_person(
-                person, new_room_name, True)
+                person, room, True)
             if not isinstance(reallocation, str):
                 if isinstance(person, Staff):
                     person_data = amity.translate_staff_data_to_dict([person])
                 else:
                     person_data = amity.translate_fellow_data_to_dict([person])
-
                 print_subtitle("Reallocated Person")
                 pretty_print_data(person_data)
             else:
                 print_error(reallocation)
+        else:
+            print_info('Arguments not provided')
 
     @docopt_cmd
     def do_load_people(self, args):
