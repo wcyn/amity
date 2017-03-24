@@ -98,7 +98,7 @@ class Amity(object):
                 if room:
                     self.print_info("Randomly allocating office to %s..." %
                                     new_person.first_name)
-                    time.sleep(1)
+                    # time.sleep(1)
                     self.print_info_result("Allocated office: %s" % room.name)
                 else:
                     self.print_info("All offices are full. No office to "
@@ -116,7 +116,7 @@ class Amity(object):
                     else:
                         self.print_info("Randomly allocating living space to "
                                         "%s..." % new_person.first_name)
-                        time.sleep(1)
+                        # time.sleep(1)
                         room = self.randomly_allocate_room(
                             new_person,
                             Config.allowed_living_space_strings[0])
@@ -693,7 +693,7 @@ class Amity(object):
         :return:
         :rtype:
         """
-        return self.staff + self.fellows
+        return self.fellows + self.staff
 
     def get_allocated_staff(self):
         """
@@ -874,8 +874,6 @@ class Amity(object):
 
                     value = value.name
                 staff_dict[key] = value
-            staff_dict['_Fellow__allocated_living_space'] = 'N/A'
-            staff_dict['_Fellow__wants_accommodation'] = 'N/A'
             staff_dict['role'] = "staff"
             staff_dict_list.append(staff_dict)
 
@@ -946,7 +944,7 @@ class Amity(object):
         cprint("\t%s" % text, 'red')\
 
 
-#
+
 # jane = Fellow("Jane", "Kay")
 # camelot = Office("Camelot")
 #
@@ -957,6 +955,8 @@ class Amity(object):
 # a.add_person("Kate", "Mitch", "staff")
 # a.add_person("Maria", "Mitch", "staff")
 # a.fellows += [jane]
+#
+# a.load_people('files/test_people.in')
 
 # a.save_state()
 #
@@ -967,3 +967,4 @@ class Amity(object):
 # print("\nJane: ", jane.__dict__)
 # print("\nKate: ", a.staff[0].__dict__)
 # print("\nMaria: ", str(a.staff[1].__dict__))
+# print("\nMaria: ", str(a.offices[0].__dict__))

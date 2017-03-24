@@ -128,13 +128,11 @@ def pretty_print_data(list_of_dicts):
             colored(key.title().split('__')[-1], 'green') for key in
             list_of_dicts[0].keys()]
         table_rows = [formatted_key_list]
-
         for obj in list_of_dicts:
-            # Initialize row data with Null values to enable indexing
-            row_data = [None] * len(key_list)
-            for key, value in obj.items():
-                row_data[key_list.index(key)] = (colored(value, 'blue'))
-            table_rows.append(row_data)
+            row_data = []
+            table_rows.append([obj[key] if key in obj else 'N/A' for key in
+                               key_list])
+
     else:
         table_rows = [["No data to Print"]]
     table = AsciiTable(table_rows)
@@ -147,7 +145,7 @@ def print_subtitle(text):
     :param text:
     :type text:
     """
-    cprint("\n\n%s\n%s" % (text, "-" * len(text)), 'cyan')
+    cprint("\n%s\n%s" % (text, "-" * len(text)), 'cyan')
 
 
 def print_info(text):
@@ -401,16 +399,18 @@ class AmityInteractive(cmd.Cmd):
         Usage: list_people [-f|-s]
         """
         if args['-f']:
-            result = amity.fellows
+            people = amity.translate_fellow_data_to_dict(amity.fellows)
         elif args['-s']:
-            result = amity.staff
+            people = amity.translate_staff_data_to_dict(amity.staff)
         else:
-            result = amity.get_all_people()
+            fellows = amity.translate_fellow_data_to_dict(amity.fellows)
+            staff = amity.translate_staff_data_to_dict(amity.staff)
+            people = fellows + staff
 
-        if isinstance(result, str):
-            print_info(result)
+        if isinstance(people, str):
+            print_info(people)
         else:
-            pretty_print_data(result)
+            pretty_print_data(people)
 
 opt = docopt(__doc__, sys.argv[1:], True, 2.0)
 
