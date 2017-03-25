@@ -6,10 +6,9 @@ from .room import Office, LivingSpace
 class Person(object):
     def __init__(self, first_name, last_name, **kwargs):
         # If not defined, id is None
-        self.person_id = kwargs.pop('id', random.randrange(0, 99999))
+        self.person_id = kwargs.pop('person_id', random.randrange(0, 99999))
         # If not defined, allocated_office_space is None
-        self.allocated_office_space = kwargs.pop('allocated_office_space',
-                                                 None)
+        self.allocated_office_space = None
         self.first_name = first_name
         self.last_name = last_name
 
@@ -43,10 +42,26 @@ class Person(object):
 
     @first_name.setter
     def first_name(self, first_name):
-        if first_name.islower() or first_name.istitle():
+        if first_name.islower() or not first_name.isupper():
             self.__first_name = ''.join(first_name.split()).title()
         else:
             self.__first_name = ''.join(first_name.split())
+
+    @property
+    def last_name(self):
+        """
+
+        :return:
+        :rtype:
+        """
+        return self.__last_name
+
+    @last_name.setter
+    def last_name(self, last_name):
+        if last_name.islower() or not last_name.isupper():
+            self.__last_name = ''.join(last_name.split()).title()
+        else:
+            self.__last_name = ''.join(last_name.split())
 
     @property
     def allocated_office_space(self):
@@ -66,27 +81,11 @@ class Person(object):
         elif office_space:
             # Office space is not None
             # Cannot assign Non-Office instance to allocated_office_space
-            print("Cannot assign non-offices instance to  "
+            print("Cannot assign non-Office instance to  "
                   "allocated_office_space")
             self.__allocated_office_space = None
         else:
             self.__allocated_office_space = None
-
-    @property
-    def last_name(self):
-        """
-
-        :return:
-        :rtype:
-        """
-        return self.__last_name
-
-    @last_name.setter
-    def last_name(self, last_name):
-        if last_name.islower() or last_name.istitle():
-            self.__last_name = ''.join(last_name.split()).title()
-        else:
-            self.__last_name = ''.join(last_name.split())
 
 
 class Staff(Person):

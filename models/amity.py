@@ -581,13 +581,20 @@ class Amity(object):
         :return:
         :rtype:
         """
-        loaded_people = []
+        loaded_fellows = []
+        modified_fellows = []
+        loaded_staff = []
+        modified_staff = []
+        print("Loaded people: ", people_list)
         for person in people_list:
             if person[3].lower() in Config.allowed_fellow_strings:
-                if person[0] in [person.person_id for person in self.fellows]:
+
+                if person[0] in [fellow.person_id for fellow in self.fellows]:
                     # get fellow with similar id and apply values
-                    fellow = [p for p in self.get_all_people()
-                              if p.person_id == person[0]][0]
+                    print("Similar fellow id: ", person)
+                    fellow = [fellow for fellow in self.get_all_people()
+                              if fellow.person_id == person[0]][0]
+                    fellow_before = fellow
                     fellow.person_id = person[0]
                     fellow.first_name = person[1]
                     fellow.last_name = person[2]
@@ -596,36 +603,55 @@ class Amity(object):
                     fellow.allocated_living_space = \
                         self.get_room_object_from_name(person[5])
                     fellow.wants_accommodation = True if person[6] else False
+                    if fellow_before != fellow:
+                        modified_fellows.append(fellow)
+                    else:
+                        modified_fellows = []
                 else:
+                    print("Create new fellow: ", person)
                     # Create a new fellow
                     fellow = Fellow(
-                        person[1], person[2], id=person[0],
-                        allocated_office_space=self
-                        .get_room_object_from_name(person[4]),
-                        allocated_living_space=self
-                        .get_room_object_from_name(person[5]),
-                        wants_accommodation=True if person[6] else False)
+                            person[1], person[2], person_id=person[0],
+                            allocated_living_space
+                            =self.get_room_object_from_name(person[5]),
+                            wants_accommodation=True if person[6]
+                            else False)
+                    fellow.allocated_office_space = \
+                        self.get_room_object_from_name(person[4])
+
                     # Only append new fellow
                     self.fellows.append(fellow)
-                    loaded_people.append(fellow)
+                    loaded_fellows.append(fellow)
             elif person[3].lower() in Config.allowed_staff_strings:
-                if person[0] in [person.person_id for person in self.fellows]:
+                if person[0] in [staff.person_id for staff in self.staff]:
+                    print("Similar staff id: ", person)
                     # get staff with similar id and apply values
-                    staff = [p for p in self.get_all_people()
-                             if p.person_id == person[0]][0]
+                    staff = [staff for staff in self.get_all_people()
+                             if staff.person_id == person[0]][0]
+                    staff_before = staff
                     staff.person_id = person[0]
                     staff.first_name = person[1]
                     staff.last_name = person[2]
                     staff.allocated_office_space = \
                         self.get_room_object_from_name(person[4])
+                    if staff_before != staff:
+                        modified_staff.append(staff)
+                    else:
+                        modified_staff = []
                 else:
-                    staff = Staff(
-                            person[1], person[2], id=person[0],
-                            allocated_office_space=self
-                            .get_room_object_from_name(person[4]))
+                    # Create an entirely new Staff object
+                    print("Create new staff: ", person)
+                    staff = Staff(person[1], person[2], person_id=person[0])
+                    staff.allocated_office_space = \
+                        self.get_room_object_from_name(person[4])
                     # Only append new staff
                     self.staff.append(staff)
-                    loaded_people.append(staff)
+                    loaded_staff.append(staff)
+        loaded_people = {
+            "loaded_fellows": loaded_fellows,
+            "modified_fellows": modified_fellows,
+            "loaded_staff": loaded_staff,
+            "modified_staff": modified_staff}
         return loaded_people
 
     def add_room_database_data_to_amity(self, room_list):
@@ -852,16 +878,6 @@ class Amity(object):
                 fellow_dict[key] = value
             fellow_dict['role'] = "fellow"
             fellow_dict_list.append(fellow_dict)
-
-        # fellow_dict_list = [fellow.__dict__ for fellow in fellow_list]
-        # for fellow in fellow_dict_list:
-        #     if fellow['_Person__allocated_office_space']:
-        #         fellow['_Person__allocated_office_space'] = \
-        #             fellow['_Person__allocated_office_space'].name
-        #     if fellow['_Fellow__allocated_living_space']:
-        #         fellow['_Fellow__allocated_living_space'] = \
-        #             fellow['_Fellow__allocated_living_space'].name
-        #     fellow['role'] = "fellow"
         return fellow_dict_list
 
     @staticmethod
@@ -883,16 +899,6 @@ class Amity(object):
                 staff_dict[key] = value
             staff_dict['role'] = "staff"
             staff_dict_list.append(staff_dict)
-
-        # staff_dict_list = [staff.__dict__ for staff in staff_list]
-        # for staff in staff_dict_list:
-        #     if staff['_Person__allocated_office_space']:
-        #         staff['_Person__allocated_office_space'] = \
-        #             staff['_Person__allocated_office_space'].name
-        #     # In order to match with the fellows (for table printing).
-        #     staff['_Fellow__allocated_living_space'] = 'N/A'
-        #     staff['_Fellow__wants_accommodation'] = 'N/A'
-        #     staff['role'] = "staff"
         return staff_dict_list
 
     @staticmethod
@@ -952,10 +958,12 @@ class Amity(object):
 
 
 
-jane = Fellow("Jane", "Kay")
 # camelot = Office("Camelot")
-#
-a = Amity()
+# ant = LivingSpace("Ant")
+# jane = Fellow("Jane", "Kay", person_id=2, allocated_office_space="camelot",
+#               allocated_living_space="ant")
+# #
+# a = Amity()
 # a.get_person_object_from_id(jane.person_id)
 # a.offices = [camelot]
 # jane.allocated_office_space = camelot

@@ -110,8 +110,10 @@ def print_header():
     """
     os.system("clear")
     print("\n")
-    cprint(figlet_format('AMITY', font='colossal'), 'blue')
-    cprint('-' * 52, 'blue')
+
+    cprint(figlet_format('AMITY', font='colossal'), 'blue', attrs=[
+        'bold'])
+    cprint('-' * 55, 'blue')
     cprint("%sA ROOM ALLOCATION SYSTEM." % (" " * 14), 'cyan')
 
 
@@ -129,9 +131,11 @@ def format_dict_keys(keys):
     return formatted
 
 
-def color_list(items, color):
+def color_list(items, color, attrs=[]):
     """
     Color the list of strings with the specified color
+    :param attrs:
+    :type attrs:
     :param items:
     :type items:
     :param color:
@@ -139,7 +143,7 @@ def color_list(items, color):
     :return: Returns the list of strings with the specified color
     :rtype:
     """
-    return [colored(item, color) for item in items]
+    return [colored(item, color, attrs=attrs) for item in items]
 
 
 def pretty_print_data(list_of_dicts):
@@ -152,19 +156,22 @@ def pretty_print_data(list_of_dicts):
         max_len = max([len(d) for d in list_of_dicts])
         headers = []
         table_rows = []
+        not_applicable = colored('N/A', 'magenta')
         for dict_item in list_of_dicts:
             for key in dict_item.keys():
                 if key not in headers:
                     headers.append(key)
             table_rows.append(color_list([dict_item[key] if key in dict_item
-                              else 'N/A' for key in headers]
-                              + ((max_len - len(headers)) * ['N/A']), 'cyan'))
-        table_rows.insert(0,  color_list(format_dict_keys(headers), 'yellow'))
+                              else not_applicable for key in headers]
+                              + ((max_len - len(headers)) * [not_applicable]),
+                            'blue'))
+        table_rows.insert(0,  color_list(format_dict_keys(headers), 'blue',
+                                         attrs=['dark']))
 
     else:
-        table_rows = [["No data to print"]]
+        table_rows = [[colored("No data to print", 'magenta')]]
     table = AsciiTable(table_rows)
-    cprint(table.table, 'green')
+    cprint(table.table, 'white')
 
 
 def print_subtitle(text):
@@ -173,7 +180,8 @@ def print_subtitle(text):
     :param text:
     :type text:
     """
-    cprint("\n%s\n%s" % (text, "-" * len(text)), 'cyan')
+    cprint(" %s \n %s \n" % (" " * len(text), text), 'blue', attrs=[
+        'reverse', 'bold'])
 
 
 def print_info(text):
@@ -401,15 +409,34 @@ class AmityInteractive(cmd.Cmd):
         Usage: load_state [<sqlite_database>]
         """
         if args['<sqlite_database>']:
-            path = args['<sqlite_database>'].split('/')[:-1]
+            path = ' '.join(args['<sqlite_database>'].split('/')[:-1])
             database_name = args['<sqlite_database>'].split('/')[-1]
             result = amity.load_state(database_name, path)
         else:
             result = amity.load_state()
 
         if isinstance(result, str):
-            print_info(result)\
+            print_info(result)
+        else:
+            if result['people']['loaded_fellows']\
+                    or result['people']['loaded_staff']:
+                people = amity.translate_fellow_data_to_dict(
+                        result['people']['loaded_fellows']) + \
+                    amity.translate_staff_data_to_dict(
+                    result['people']['loaded_staff'])
+                print_subtitle("Loaded People")
+                pretty_print_data(people)
+            else:
+                print_info("No new people were loaded from the database")
 
+            if result['people']['modified_fellows'] \
+                    or result['people']['modified_staff']:
+                modified_people = amity.translate_fellow_data_to_dict(
+                        result['people']['modified_fellows']) + \
+                         amity.translate_staff_data_to_dict(
+                                 result['people']['modified_staff'])
+                print_subtitle("Modified People")
+                pretty_print_data(modified_people)
 
     @staticmethod
     def do_quit(args):
@@ -423,7 +450,7 @@ class AmityInteractive(cmd.Cmd):
     @docopt_cmd
     def do_list_people(self, args):
         """
-        List everyone in amity.
+        List the people in amity.
         Usage: list_people [-f|-s]
         """
         if args['-f']:
@@ -438,7 +465,28 @@ class AmityInteractive(cmd.Cmd):
         if isinstance(people, str):
             print_info(people)
         else:
-            pretty_print_data(people)
+            pretty_print_data(people)\
+
+
+    @docopt_cmd
+    def do_list_rooms(self, args):
+        """
+        List rooms in amity.
+        Usage: list_people [-f|-s]
+        """
+        if args['-o']:
+            rooms = amity.translate_room_data_to_dict(amity.offices, [])
+        elif args['-l']:
+            rooms = amity.translate_staff_data_to_dict([], amity.living_spaces)
+        else:
+            fellows = amity.translate_room_data_to_dict(amity.get_all_rooms())
+            staff = amity.translate_staff_data_to_dict(amity.staff)
+            rooms = fellows + staff
+
+        if isinstance(rooms, str):
+            print_info(rooms)
+        else:
+            pretty_print_data(rooms)
 
 opt = docopt(__doc__, sys.argv[1:], True, 2.0)
 
