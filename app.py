@@ -85,8 +85,9 @@ def docopt_cmd(func):
             fn_name = '_'.join(fn.__name__.split('_')[1:])
             print_info('Type `help %s` to view the documentation for the `%s` '
                        'command' % (fn_name, fn_name))
-            print_subtitle('Here is the usage for `%s`' % fn_name)
-            print_info(fn.__doc__.split('Usage:')[-1].strip())
+            print_info('Here is the usage for `%s`' % fn_name)
+            cprint(" %s \n" % fn.__doc__.split('Usage:')[-1].strip(),
+                   'yellow', attrs=['reverse'])
             print_error(error)
             return
         except SystemExit:
@@ -442,6 +443,8 @@ class AmityInteractive(cmd.Cmd):
 
         if isinstance(result, str):
             print_info(result)
+        else:
+            print_info("Data Saved Successfully")
 
     @docopt_cmd
     def do_load_state(self, args):

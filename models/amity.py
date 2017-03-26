@@ -5,7 +5,7 @@ import time
 
 from pathlib import Path
 
-from termcolor import cprint
+from termcolor import cprint, colored
 
 from models.config import Config
 from models.room import LivingSpace, Office, Room
@@ -461,28 +461,32 @@ class Amity(object):
                     + self.staff:
                 return "No data to save"
 
-            if db_path.is_file() and not override:
+            if db_path.is_file() and not override and database_name != \
+                    Config.default_db_name:
                 self.print_info(
                         "About to override database '%s'" % database_name)
-                override = input("Override? (Y/N): ")
-                while not override:
-                    if override in Config.allowed_yes_strings:
-                        override = True
-                    elif override in Config.allowed_no_strings:
+                
+                while True:
+                    override = input(colored("Override? (Y/N): ", 'green'))
+                    if override.lower() in Config.allowed_yes_strings:
+                        break
+                    elif override.lower() in Config.allowed_no_strings:
                         return "Aborting save state"
                     else:
                         self.print_info("Invalid Option")
-                        override = input("Override? (Y/N): ")
 
-            print("DbFIle: ", database_file_path)
+            self.print_info("Database Path: %s" % database_file_path)
             connection = sqlite3.connect(database_file_path)
             if isinstance(connection, sqlite3.Connection):
                 cursor = connection.cursor()
+                self.print_info("Creating rooms table...")
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS rooms
                     (name varchar(50) PRIMARY KEY,
                     type varchar(15))
                       ''')
+                
+                self.print_info("Creating people table...")
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS people
                     (id INTEGER PRIMARY KEY,
@@ -496,19 +500,22 @@ class Amity(object):
 
                 # Save data to database
                 if self.get_all_rooms():
+                    self.print_info("Saving rooms to Database...")
                     cursor.executemany(
                             "INSERT OR REPLACE INTO rooms (name, "
                             "type) values (?, ?)", self.tuplize_room_data(
                                     self.get_all_rooms()))
                 if self.fellows:
+                    self.print_info("Saving fellows to Database...")
                     cursor.executemany("INSERT OR REPLACE INTO people (id, "
                                        "first_name, last_name, "
-                                       "role allocated_office_space, "
-                                       "allocated_living_space,"
+                                       "role, allocated_office_space, "
+                                       "allocated_living_space, "
                                        "wants_accommodation) values "
                                        "(?, ?, ?, ?, ?, ?, ?)",
                                        self.tuplize_fellow_data(self.fellows))
                 if self.staff:
+                    self.print_info("Saving staff to Database...")
                     cursor.executemany("INSERT OR REPLACE INTO people (id, "
                                        "first_name, last_name, role, "
                                        "allocated_office_space, "
@@ -516,12 +523,15 @@ class Amity(object):
                                        "wants_accommodation) "
                                        "values (?, ?, ?, ?, ?, ?, ?)",
                                        self.tuplize_staff_data(self.staff))
-
                 connection.commit()
                 connection.close()
             else:
                 self.print_info("Data not saved")
-
+                return connection
+        
+        except TypeError as error:
+            raise error
+        
         except Exception as e:
             # Print out the sqlite error
             self.print_error("Error: %s" % e)
@@ -538,7 +548,6 @@ class Amity(object):
         """
         try:
             if database_name:
-                print("db_name: ", database_name)
                 if set('[~!@#$%^&*()+{}"/\\:;\']+$').intersection(
                         database_name) and database_name not in \
                         Config.special_databases:
@@ -550,15 +559,12 @@ class Amity(object):
                 database_file_path = path + "/" + database_name
             else:
                 database_file_path = Config.database_directory + database_name
-            print("DB File path: ", database_file_path)
+            self.print_info("Database path: ", database_file_path)
 
             db_path = Path(database_file_path)
 
             if not db_path.is_file():
-                print("DB not exist: ", database_file_path)
                 return Config.error_codes[18] + " '%s'" % database_name
-            else:
-                print("DATABASE EXISTS: ", database_name)
 
             connection = sqlite3.connect(database_file_path)
             if isinstance(connection, sqlite3.Connection):
@@ -584,6 +590,8 @@ class Amity(object):
 
                 connection.close()
                 return {"people": people_objects, "rooms": room_objects}
+            else:
+                return connection
         except Exception as e:
             raise e
 
@@ -599,7 +607,6 @@ class Amity(object):
         modified_fellows = []
         loaded_staff = []
         modified_staff = []
-        print("Loaded people: ", people_list)
         for person in people_list:
             if person[3].lower() in Config.allowed_fellow_strings:
 
@@ -626,8 +633,8 @@ class Amity(object):
                     # Create a new fellow
                     fellow = Fellow(
                             person[1], person[2], person_id=person[0],
-                            allocated_living_space
-                            =self.get_room_object_from_name(person[5]),
+                            allocated_living_space=self.
+                            get_room_object_from_name(person[5]),
                             wants_accommodation=True if person[6]
                             else False)
                     fellow.allocated_office_space = \
@@ -658,7 +665,6 @@ class Amity(object):
                                     % (person[0], person[1], person[2]))
                 else:
                     # Create an entirely new Staff object
-                    print("Create new staff: ", person)
                     staff = Staff(person[1], person[2], person_id=person[0])
                     staff.allocated_office_space = \
                         self.get_room_object_from_name(person[4])
