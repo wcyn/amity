@@ -6,7 +6,6 @@ from pathlib import Path
 
 from termcolor import cprint, colored
 
-from models import person
 from models.config import Config
 from models.database import Database
 from models.room import LivingSpace, Office, Room
@@ -300,7 +299,7 @@ class Amity(object):
         except TypeError as error:
             raise error
 
-    def print_allocations(self, filename=None):
+    def print_allocated_people(self, filename=None, path=None):
         """
 
         :param filename:
@@ -350,7 +349,13 @@ class Amity(object):
                     raise TypeError
                 # Clean filename. Remove unwanted filename characters
                 filename = ''.join(x for x in filename if x not in "\/:*?<>|")
-                with open(filename, 'w') as f:
+                if path:
+                    file_path = path + "/" + filename
+                else:
+                    file_path = filename
+                self.print_info("Printing allocations to file '%s'..."
+                                % file_path)
+                with open(file_path, 'w') as f:
                     f.writelines(allocations_print)
                 return "Allocations saved to the file '%s'" % filename
             else:
@@ -358,9 +363,11 @@ class Amity(object):
         except Exception as e:
             raise e
 
-    def print_unallocated(self, filename=None):
+    def print_unallocated(self, filename=None, path=None):
         """
 
+        :param path: 
+        :type path: 
         :param filename:
         :type filename:
         :return:
@@ -374,12 +381,13 @@ class Amity(object):
                     (fellow.first_name, fellow.last_name, "Fellow", '\n'))
                     for fellow in self.get_fellows_with_no_allocation()]
             fellows_with_only_living_space = [' '.join(
-                    (fellow.first_name, fellow.last_name, "Fellow", "-",
-                     fellow.allocated_living_space.name, '\n'))
+                    (fellow.first_name, fellow.last_name, "Fellow", 
+                     "(No Office)", fellow.allocated_living_space.name, '\n'))
                      for fellow in self.get_fellows_with_living_space_only()]
             fellows_with_only_office_space = [' '.join(
                     (fellow.first_name, fellow.last_name, "Fellow",
-                     fellow.allocated_office_space.name, "-", '\n'))
+                     fellow.allocated_office_space.name, "(No Living Space)",
+                     '\n'))
                      for fellow in self.get_fellows_with_office_space_only()]
             fellows = fellows_with_neither_allocations \
                 + fellows_with_only_living_space \
@@ -394,9 +402,13 @@ class Amity(object):
                     raise TypeError
                 # Clean filename. Remove unwanted filename characters
                 filename = ''.join(x for x in filename if x not in "\/:*?<>|")
-                self.print_info("Printing Allocations to file '%s'..."
-                                % filename)
-                with open(filename, 'w') as f:
+                if path:
+                    file_path = path + "/" + filename
+                else:
+                    file_path = filename
+                self.print_info("Printing unallocated data to file '%s'..."
+                                % file_path)
+                with open(file_path, 'w') as f:
                     f.writelines(unallocated)
                 self.print_info("Printed to file successfully!")
             else:
@@ -406,9 +418,11 @@ class Amity(object):
         except TypeError as error:
             raise error
 
-    def print_room(self, room_name):
+    def print_room(self, room_name, verbose=True):
         """
 
+        :param verbose: 
+        :type verbose: 
         :param room_name:
         :type room_name:
         :return:
@@ -420,39 +434,89 @@ class Amity(object):
         room_name = room_name.lower()
         people_count = 0
         if rooms:
-            if room_name in [room.name.lower() for room in rooms]:
-                for staff in self.staff:
-                    if isinstance(staff.allocated_office_space, Office):
-                        if room_name == \
-                                staff.allocated_office_space.name.lower():
-                            print("%s %s %s" % (
-                                staff.first_name, staff.last_name, "Staff"))
-                            people_count += 1
-                for fellow in self.fellows:
-                    if isinstance(fellow.allocated_office_space, Office):
-                        if room_name == \
-                                fellow.allocated_office_space.name.lower():
-                            print("%s %s %s" % (
-                                fellow.first_name, fellow.last_name, "Fellow"))
-                            people_count += 1
-                    elif isinstance(
-                            fellow.allocated_living_space, LivingSpace):
-                        if room_name == \
-                                fellow.allocated_living_space.name.lower():
-                            print("%s %s %s" % (
-                                fellow.first_name, fellow.last_name, "Fellow"))
-                            people_count += 1
-
-                if not people_count:
-                    # Room is empty
-                    return Config.error_codes[16] + ": '%s'" % room_name
-            else:
-                # Room does not exist
-                return Config.error_codes[1] + ": '%s'" % room_name
+            people = self.get_people_allocated_room(room_name)
+            if isinstance(people, str):
+                return people
+            if not people:
+                # Room is empty
+                return Config.error_codes[16] + ": '%s'" % room_name
+            if verbose:
+                for person in people:
+                    if isinstance(person, Staff):
+                        print("%s %s %s" % (
+                            person.first_name, person.last_name,
+                            "Staff"))
+                    else:
+                        print("%s %s %s" % (
+                            person.first_name, person.last_name,
+                            "Fellow"))
+            return people
         else:
             return "There are no rooms yet"
 
-        return people_count
+    def get_people_allocated_room(self, room_name):
+        """
+        Return a list of the people allocated the specified room name
+        :param room_name:
+        :type room_name:
+        :return:
+        :rtype:
+        """
+        room = self.get_room_object_from_name(room_name)
+        if isinstance(room, Office):
+            return [person for person in self.get_all_people() if
+                    person.allocated_office_space == room]
+        elif isinstance(room, LivingSpace):
+            return [fellow for fellow in self.fellows if
+                    fellow.allocated_living_space == room]
+        else:
+            return room
+
+    def print_allocations(self, filename=None, path=None):
+        """
+        Prints rooms and the people allocated to those rooms
+        """
+        if not filename:
+            rooms = self.get_all_rooms()
+            if rooms:
+                for room in rooms:
+                    self.print_subtitle(room.name)
+                    people = self.print_room(room.name)
+                    if isinstance(people, str):
+                        return people
+            else:
+                return "There are no rooms yet"
+        else:
+            if not isinstance(filename, str):
+                raise TypeError
+            if path:
+                file_path = path + "/" + filename
+            else:
+                file_path = Config.files_directory + filename
+            # Clean filename. Remove unwanted filename characters
+            filename = ''.join(x for x in filename if x not in "\/:*?<>|")
+            self.print_info("Printing Allocations to file '%s'..."
+                            % filename)
+            # Empty the file first
+            open(file_path, 'w').close()
+            for room in self.get_all_rooms():
+                people = self.print_room(room.name, False)
+                if not isinstance(people, str):
+                    with open(file_path, 'w+') as f:
+                        for person in people:
+                            if isinstance(person, Staff):
+                                f.write("%s %s %s\n" % (
+                                    person.first_name,
+                                    person.last_name,
+                                    "Staff"))
+                            else:
+                                f.write("%s %s %s\n" % (
+                                    person.first_name,
+                                    person.last_name,
+                                    "Fellow"))
+                else:
+                    self.print_info(people)
+            self.print_info("Printed to file successfully!")
 
     def save_state(self, database_name=None, path=None, override=False):
         """
@@ -769,7 +833,7 @@ class Amity(object):
                 if room:
                     return room[0]
                 else:
-                    return "The room %s does not exist" % name
+                    return "%s: '%s'" % (Config.error_codes[1], name)
             else:
                 return "Room name must be a string"
 
@@ -1023,6 +1087,16 @@ class Amity(object):
         :rtype:
         """
         cprint("\t| %s\n" % text, 'blue')
+
+    @staticmethod
+    def print_subtitle(text):
+        """
+
+        :param text:
+        :type text:
+        """
+        cprint("\n %s \n %s " % (" " * len(text), text), 'blue', attrs=[
+            'reverse', 'bold'])
 
     @staticmethod
     def print_error(text):

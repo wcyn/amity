@@ -340,28 +340,28 @@ class TestAmity(unittest.TestCase):
     # Print Allocations Tests
     # *****************************
 
-    def test_print_allocations_raises_type_error_when_filename_not_string(
+    def test_print_allocated_people_raises_type_error_when_filename_not_string(
             self):
         self.fellow.allocated_office_space = self.office
         self.fellow.wants_accommodation = True
         with self.assertRaises(TypeError):
-            self.amity.print_allocations(42)
-            self.amity.print_allocations(["hello"])
+            self.amity.print_allocated_people(42)
+            self.amity.print_allocated_people(["hello"])
 
-    def test_print_allocations_gives_message_when_no_data_to_print(self):
-        result = self.amity.print_allocations("test_allocations.txt")
+    def test_print_allocated_people_gives_message_when_no_data_to_print(self):
+        result = self.amity.print_allocated_people("test_allocations.txt")
         self.assertEqual(result, "No allocations to print")
 
-    def test_print_allocations_ignores_invalid_characters_in_filename(self):
+    def test_print_allocated_people_ignores_invalid_characters_in_filename(self):
         self.fellow.allocated_office_space = self.office
         self.fellow.wants_accommodation = True
         filename = "test_nairobi.txt"
-        result = self.amity.print_allocations("test_nairobi:*?.txt")
+        result = self.amity.print_allocated_people("test_nairobi:*?.txt")
         self.assertEqual(result,
                          "Allocations saved to the file '%s'" % filename)
         os.remove(filename)
 
-    def test_print_allocations_prints_only_allocated_people_to_file(self):
+    def test_print_allocated_people_prints_only_allocated_people_to_file(self):
         fellow = Fellow("Vader", "Surname")
         fellow.allocated_office_space = None
         fellow.allocated_living_space = None
@@ -373,7 +373,7 @@ class TestAmity(unittest.TestCase):
         self.staff.allocated_office_space = self.office
 
         filename = "test_allocations.txt"
-        self.amity.print_allocations(filename)
+        self.amity.print_allocated_people(filename)
         with open(filename) as f:
             allocated = f.readlines()
         # Get rid of newlines
@@ -383,7 +383,7 @@ class TestAmity(unittest.TestCase):
         self.assertFalse("Vader Surname Fellow" in allocated)
         os.remove(filename)
 
-    def test_print_allocations_prints_fellows_with_either_both_or_one_allocation_present(
+    def test_print_allocated_people_prints_fellows_with_either_both_or_one_allocation_present(
             self):
         fellow = Fellow("Vader", "Surname")
         fellow2 = Fellow("Alex", "Surname")
@@ -409,7 +409,7 @@ class TestAmity(unittest.TestCase):
         self.staff.allocated_office_space = self.office
 
         filename = "allocated.txt"
-        self.amity.print_allocations(filename)
+        self.amity.print_allocated_people(filename)
         with open(filename) as f:
             allocated = f.readlines()
 
@@ -423,16 +423,16 @@ class TestAmity(unittest.TestCase):
         self.assertFalse("Vader Surname Fellow" in allocated)
         os.remove(filename)
 
-    def test_print_allocations_returns_correct_object_if_no_file_given(self):
+    def test_print_allocated_people_returns_correct_object_if_no_file_given(self):
         self.amity.allocate_room_to_person(self.fellow, self.living_space)
         self.amity.allocate_room_to_person(self.fellow, self.office)
         self.amity.allocate_room_to_person(self.staff, self.office)
         # allocated = "Jane Surname Staff Hogwarts\n" \
         #             "Jake Surname Fellow Hogwarts Python"
         # with patch('sys.stdout', new=StringIO()) as fakeOutput:
-        #     self.amity.print_allocations()
+        #     self.amity.print_allocated_people()
         #     self.assertEqual(fakeOutput.getvalue().strip(), allocated)
-        result = self.amity.print_allocations()
+        result = self.amity.print_allocated_people()
         print("result allocs: ", result)
         self.assertEqual(result[0].allocated_office_space,
                          self.fellow.allocated_office_space)
@@ -444,7 +444,7 @@ class TestAmity(unittest.TestCase):
             self):
         with self.assertRaises(TypeError):
             self.amity.print_unallocated(42)
-            self.amity.print_allocations(["hello"])
+            self.amity.print_allocated_people(["hello"])
 
     def test_print_unallocated_ignores_invalid_characters_in_filename(self):
         filename = "test_nairobi.txt"
@@ -512,8 +512,10 @@ class TestAmity(unittest.TestCase):
         self.assertFalse("Jake Surname Fellow Hogwarts Python" in unallocated)
         self.assertTrue("Malia Surname Staff" in unallocated)
         self.assertTrue("Vader Surname Fellow" in unallocated)
-        self.assertTrue("Alex Surname Fellow Hogwarts -" in unallocated)
-        self.assertTrue("David Surname Fellow - Python" in unallocated)
+        self.assertTrue("Alex Surname Fellow Hogwarts (No Living Space)" in
+                        unallocated)
+        self.assertTrue("David Surname Fellow (No Office) Python" in
+                        unallocated)
         os.remove(filename)
 
     def test_print_unallocated_prints_correctly_to_console_if_no_file_given(
@@ -541,8 +543,8 @@ class TestAmity(unittest.TestCase):
 
         unallocated = "Malia Surname Staff\n" \
                       "Vader Surname Fellow\n" \
-                      "David Surname Fellow - Python\n" \
-                      "Alex Surname Fellow Hogwarts -"
+                      "David Surname Fellow (No Office) Python\n" \
+                      "Alex Surname Fellow Hogwarts (No Living Space)"
         with patch('sys.stdout', new=StringIO()) as fakeOutput:
             self.amity.print_unallocated()
             self.assertEqual(fakeOutput.getvalue().strip(), unallocated)
@@ -575,8 +577,8 @@ class TestAmity(unittest.TestCase):
         self.fellow.allocated_office_space = self.office
         self.staff.allocated_office_space = self.office
 
-        office_occupants = "Jane Surname Staff\n" \
-                           "Jake Surname Fellow"
+        office_occupants = "Jake Surname Fellow\n"\
+                           "Jane Surname Staff"
         with patch('sys.stdout', new=StringIO()) as fakeOutput:
             self.amity.print_room("hogwarts")
             self.assertEqual(fakeOutput.getvalue().strip(), office_occupants)

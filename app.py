@@ -392,20 +392,14 @@ class AmityInteractive(cmd.Cmd):
         Prints a list of allocations onto the screen
         Usage: print_allocations [--o=FILENAME]
         """
-        allocations = amity.print_allocations(args['--o'])
-        if isinstance(allocations, str):
-            print_info(allocations)
+        if args['--o']:
+            path = ' '.join(args['--o'].split('/')[:-1])
+            filename = args['--o'].split('/')[-1]
+            result = amity.print_allocations(filename, path)
         else:
-            fellows = [fellow for fellow in allocations if isinstance(
-                fellow, Fellow)]
-            staff = [staff for staff in allocations if isinstance(
-                staff, Staff)]
-            fellow_data = amity.translate_fellow_data_to_dict(fellows)
-
-            staff_data = amity.translate_staff_data_to_dict(staff)
-
-            print_subtitle("Amity Allocations")
-            pretty_print_data(staff_data + fellow_data)
+            result = amity.print_allocations(None)
+        if isinstance(result, str):
+            print_info(result)
 
     @docopt_cmd
     def do_print_unallocated(self, args):
@@ -414,7 +408,12 @@ class AmityInteractive(cmd.Cmd):
         Usage: print_unallocated [--o=FILENAME]
         """
         print_subtitle("Unallocated")
-        result = amity.print_unallocated(args['--o'])
+        if args['--o']:
+            path = ' '.join(args['--o'].split('/')[:-1])
+            filename = args['--o'].split('/')[-1]
+            result = amity.print_unallocated(filename, path)
+        else:
+            result = amity.print_unallocated(None)
         if isinstance(result, str):
             print_info(result)
 
@@ -425,6 +424,7 @@ class AmityInteractive(cmd.Cmd):
         screen.
         Usage: print_room <room_name>
         """
+        print_subtitle(args['<room_name>'].title())
         result = amity.print_room(args['<room_name>'])
         if isinstance(result, str):
             print_info(result)
