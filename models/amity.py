@@ -159,8 +159,7 @@ class Amity(object):
                         "to assign to '%s %s'" %
                         (fellow.first_name, fellow.last_name))
 
-    @staticmethod
-    def allocate_room_to_person(person, room, reallocate=False):
+    def allocate_room_to_person(self, person, room):
         """
 
         :param person:
@@ -173,6 +172,7 @@ class Amity(object):
         :rtype:
         """
         try:
+            print("Allocating Room to person?")
             if room.get_max_occupants() - room.num_of_occupants:
                 # Should not assign a living space to a staff member
                 if isinstance(person, Staff) and isinstance(room, LivingSpace):
@@ -180,22 +180,37 @@ class Amity(object):
 
                 already_allocated_office = isinstance(
                         room, Office) and isinstance(
-                    person.allocated_office_space, Office)
+                        person.allocated_office_space, Office)
                 already_allocated_living_space = isinstance(
                         room, LivingSpace) and isinstance(
-                    person.allocated_living_space, LivingSpace)
+                        person.allocated_living_space, LivingSpace)
 
+                reallocate = True
+                if already_allocated_office:
+                    if person.allocated_office == room:
+                        self.print_error("Person already allocated "
+                                         "office '%s'" % room.name)
+                        return
+                    # Person already has office space
+                    self.print_info("About to move %s from %s to %s" % (
+                        person.first_name,
+                        person.allocated_office_space.name, room.name))
+                    reallocate = self.handle_yes_no_input(
+                            "Move? (Y/N): ", "Aborting Reallocation")
+
+                elif already_allocated_living_space:
+                    if person.allocated_living_space == room:
+                        self.print_error("Person already allocated "
+                                         "living space '%s'" % room.name)
+                        return
+                    # Person already has office space
+                    self.print_info("About to move %s from %s to %s" % (
+                        person.first_name,
+                        person.allocated_living_space.name, room.name))
+                    reallocate = self.handle_yes_no_input(
+                            "Move? (Y/N): ", "Aborted Reallocation")
                 if not reallocate:
-                    if already_allocated_office:
-                        # Person already has office space
-                        return "About to move %s from %s to %s" % (
-                            person.first_name,
-                            person.allocated_office_space.name, room.name)
-                    elif already_allocated_living_space:
-                        # Person already has office space
-                        return "About to move %s from %s to %s" % (
-                            person.first_name,
-                            person.allocated_living_space.name, room.name)
+                    return  # Abort Mission
 
                 if isinstance(room, Office):
                     person.allocated_office_space = room
@@ -302,6 +317,8 @@ class Amity(object):
     def print_allocated_people(self, filename=None, path=None):
         """
 
+        :param path: 
+        :type path: 
         :param filename:
         :type filename:
         :return:
@@ -348,7 +365,8 @@ class Amity(object):
                 if not isinstance(filename, str):
                     raise TypeError
                 # Clean filename. Remove unwanted filename characters
-                filename = ''.join(x for x in filename if x not in "\/:*?<>|")
+                filename = ''.join(x for x in filename if x not in 
+                                   "\"'\/:*?<>|")
                 if path:
                     file_path = path + "/" + filename
                 else:
@@ -401,7 +419,8 @@ class Amity(object):
                 if not isinstance(filename, str):
                     raise TypeError
                 # Clean filename. Remove unwanted filename characters
-                filename = ''.join(x for x in filename if x not in "\/:*?<>|")
+                filename = ''.join(x for x in filename if x not in
+                                   "\"'\/:*?<>|")
                 if path:
                     file_path = path + "/" + filename
                 else:
@@ -483,7 +502,7 @@ class Amity(object):
                     self.print_subtitle(room.name)
                     people = self.print_room(room.name)
                     if isinstance(people, str):
-                        return people
+                        cprint(people, 'yellow')
             else:
                 return "There are no rooms yet"
         else:
@@ -502,7 +521,9 @@ class Amity(object):
             for room in self.get_all_rooms():
                 people = self.print_room(room.name, False)
                 if not isinstance(people, str):
-                    with open(file_path, 'w+') as f:
+                    with open(file_path, 'a') as f:
+                        f.write("%s\n%s\n" % (room.name, '-' * len(
+                                room.name)))
                         for person in people:
                             if isinstance(person, Staff):
                                 f.write("%s %s %s\n" % (
@@ -514,6 +535,7 @@ class Amity(object):
                                     person.first_name,
                                     person.last_name,
                                     "Fellow"))
+                        f.write("\n")
                 else:
                     self.print_info(people)
             self.print_info("Printed to file successfully!")
@@ -552,14 +574,10 @@ class Amity(object):
                     Config.default_db_name:
                 self.print_info(
                         "About to override database '%s'" % database_name)
-                while True:
-                    override = input(colored("Override? (Y/N): ", 'green'))
-                    if override.lower() in Config.allowed_yes_strings:
-                        break
-                    elif override.lower() in Config.allowed_no_strings:
-                        return "Aborting save state"
-                    else:
-                        self.print_info("Invalid Option")
+                override = self.handle_yes_no_input(
+                        "Override? (Y/N): ", "Aborted save state")
+                if not override:
+                    return
 
             self.print_info("Database Path: %s" % database_file_path)
             connection = sqlite3.connect(database_file_path)
@@ -585,6 +603,7 @@ class Amity(object):
                             cursor, self.tuplize_staff_data(self.staff))
                 connection.commit()
                 connection.close()
+                self.print_info("Data Saved Successfully")
             else:
                 self.print_info("Data not saved")
                 return connection
@@ -1108,3 +1127,20 @@ class Amity(object):
         :rtype:
         """
         cprint("\t%s" % text, 'magenta')
+
+    def handle_yes_no_input(self, prompt, no_clause):
+        """
+
+        :return:
+        :rtype:
+        """
+        while True:
+            override = input(
+                    colored(prompt, 'green'))
+            if override.lower() in Config.allowed_yes_strings:
+                return True
+            elif override.lower() in Config.allowed_no_strings:
+                self.print_error(no_clause)
+                return False
+            else:
+                self.print_info("Invalid Option")

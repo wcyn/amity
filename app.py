@@ -444,8 +444,6 @@ class AmityInteractive(cmd.Cmd):
 
         if isinstance(result, str):
             print_info(result)
-        else:
-            print_info("Data Saved Successfully")
 
     @docopt_cmd
     def do_load_state(self, args):
