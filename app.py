@@ -151,10 +151,10 @@ def print_loaded_people(people_dict):
     """
     if people_dict['loaded_fellows'] \
             or people_dict['loaded_staff']:
-        people = amity.translate_fellow_data_to_dict(
-                people_dict['loaded_fellows']) + \
-                 amity.translate_staff_data_to_dict(
-                         people_dict['loaded_staff'])
+        people = amity.translate_staff_data_to_dict(
+                people_dict['loaded_staff'])\
+                + amity.translate_fellow_data_to_dict(
+                people_dict['loaded_fellows'])
         print_subtitle("Loaded People")
         pretty_print_data(people)
     else:
@@ -413,12 +413,10 @@ class AmityInteractive(cmd.Cmd):
         Prints a list of allocations onto the screen.
         Usage: print_unallocated [--o=FILENAME]
         """
+        print_subtitle("Unallocated")
         result = amity.print_unallocated(args['--o'])
         if isinstance(result, str):
             print_info(result)
-        else:
-            print_subtitle("Unallocated")
-            pretty_print_data(result)
 
     @docopt_cmd
     def do_print_room(self, args):
@@ -490,7 +488,7 @@ class AmityInteractive(cmd.Cmd):
         else:
             fellows = amity.translate_fellow_data_to_dict(amity.fellows)
             staff = amity.translate_staff_data_to_dict(amity.staff)
-            people = fellows + staff
+            people = staff + fellows
 
         if isinstance(people, str):
             print_info(people)

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from termcolor import cprint, colored
 
+from models import person
 from models.config import Config
 from models.database import Database
 from models.room import LivingSpace, Office, Room
@@ -95,7 +96,8 @@ class Amity(object):
                     # Randomly assign available living space to fellow
                     self.allocate_living_room_to_new_fellow(new_person)
                 else:
-                    self.print_error(Config.error_codes[10])
+                    self.print_error("%s '%s %s'" % (
+                        Config.error_codes[10], first_name, last_name))
             return new_person
 
         except TypeError as error:
@@ -265,17 +267,24 @@ class Amity(object):
                             re.IGNORECASE):
                     # proceed to create the objects else ignore the bad line
                     person_data = person.strip().split()
+                    wants_accommodation = False
+                    if len(person_data) == 4:
+                        if person_data[3] in Config.allowed_yes_strings:
+                            wants_accommodation = True
+
                     if person_data[2].lower() in Config.allowed_fellow_strings:
                         fellow = self.add_person(
                                 person_data[0], person_data[1],
-                                Config.allowed_fellow_strings[0])
+                                Config.allowed_fellow_strings[0],
+                                wants_accommodation)
                         loaded_people.append(fellow)
                     elif person_data[2].lower() in \
                             Config.allowed_staff_strings:
                         staff = self.add_person(
                                 person_data[0],
                                 person_data[1],
-                                Config.allowed_staff_strings[0])
+                                Config.allowed_staff_strings[0],
+                                wants_accommodation)
                         loaded_people.append(staff)
                 else:
                     self.print_info("Ignoring badly formatted line: %s " %
@@ -389,6 +398,7 @@ class Amity(object):
                                 % filename)
                 with open(filename, 'w') as f:
                     f.writelines(unallocated)
+                self.print_info("Printed to file successfully!")
             else:
                 for allocation in unallocated:
                     print(allocation.strip())
@@ -578,84 +588,120 @@ class Amity(object):
         :return:
         :rtype:
         """
-        loaded_fellows = []
-        modified_fellows = []
         loaded_staff = []
         modified_staff = []
-        for person in people_list:
-            if person[3].lower() in Config.allowed_fellow_strings:
+        loaded_fellows = []
+        modified_fellows = []
+        for person_tuple in people_list:
+            if person_tuple[3].lower() in Config.allowed_fellow_strings:
+                fellow = self.add_fellow_database_data_to_amity(person_tuple)
+                if fellow['loaded_fellow']:
+                    loaded_fellows.append(fellow['loaded_fellow'])
+                elif fellow['modified_fellow']:
+                    modified_fellows.append(fellow['modified_fellow'])
 
-                if person[0] in [fellow.person_id for fellow in self.fellows]:
-                    # get fellow with similar id and apply values
-                    fellow = self.get_person_object_from_id(person[0])
-                    fellow_before = fellow
-                    fellow.first_name = person[1]
-                    fellow.last_name = person[2]
-                    fellow.allocated_office_space = \
-                        self.get_room_object_from_name(person[4])
-                    fellow.allocated_living_space = \
-                        self.get_room_object_from_name(person[5])
-                    fellow.wants_accommodation = True if person[6] else False
-                    if fellow_before != fellow:
-                        modified_fellows.append(fellow)
-                    else:
-                        modified_fellows = []
-                elif person[0] in [staff.person_id for staff in self.staff]:
-                    self.print_info("A staff member with the ID '%s' already "
-                                    "exists. Not loading Fellow '%s' '%s"
-                                    % (person[0], person[1], person[2]))
-                else:
-                    # Create a new fellow
-                    fellow = Fellow(
-                            person[1], person[2], person_id=person[0],
-                            allocated_living_space=self.
-                            get_room_object_from_name(person[5]),
-                            wants_accommodation=True if person[6]
-                            else False)
-                    fellow.allocated_office_space = \
-                        self.get_room_object_from_name(person[4])
+            elif person_tuple[3].lower() in Config.allowed_staff_strings:
+                staff = self.add_staff_database_data_to_amity(person_tuple)
+                if staff['loaded_staff']:
+                    loaded_staff.append(staff['loaded_staff'])
+                elif staff['modified_staff']:
+                    modified_staff.append(staff['modified_staff'])
 
-                    # Only append new fellow
-                    self.fellows.append(fellow)
-                    loaded_fellows.append(fellow)
-            elif person[3].lower() in Config.allowed_staff_strings:
-                # should actually check for all people not just the type
-                if person[0] in [staff.person_id for staff in self.staff]:
-                    # get staff with similar id and apply values
-                    staff = self.get_person_object_from_id(person[0])
-                    staff_before = staff
-                    staff.person_id = person[0]
-                    staff.first_name = person[1]
-                    staff.last_name = person[2]
-                    staff.allocated_office_space = \
-                        self.get_room_object_from_name(person[4])
-                    if staff_before != staff:
-                        modified_staff.append(staff)
-                    else:
-                        modified_staff = []
-                elif person[0] in [fellow.person_id for fellow
-                                   in self.fellows]:
-                    self.print_info("A fellow with the ID '%s' already "
-                                    "exists. Not loading Staff '%s' '%s"
-                                    % (person[0], person[1], person[2]))
-                else:
-                    # Create an entirely new Staff object
-                    staff = Staff(person[1], person[2], person_id=person[0])
-                    staff.allocated_office_space = \
-                        self.get_room_object_from_name(person[4])
-                    # Only append new staff
-                    self.staff.append(staff)
-                    loaded_staff.append(staff)
             else:
-                self.print_error("%s '%s'" % (Config.error_codes[5], person[
-                    3]))
+                self.print_error("%s '%s'" % (Config.error_codes[5],
+                                              person_tuple[3]))
                 self.print_error('Skipping invalid data...')
-        loaded_people = {
-            "loaded_fellows": loaded_fellows,
-            "modified_fellows": modified_fellows,
+        return {
             "loaded_staff": loaded_staff,
-            "modified_staff": modified_staff}
-        return loaded_people
+            "modified_staff": modified_staff,
+            "loaded_fellows": loaded_fellows,
+            "modified_fellows": modified_fellows
+        }
+
+    def add_fellow_database_data_to_amity(self, fellow_tuple):
+        """
+        Add Fellow Data to Amity from an SQLITE Database tuple
+        :param fellow_tuple: A fellow in Amity
+        :type fellow_tuple: Tuple containing fellow data
+        """
+        loaded_fellow = None
+        modified_fellow = None
+        if fellow_tuple[0] in [fellow.person_id for fellow in self.fellows]:
+            # get fellow with similar id and apply values
+            fellow = self.get_person_object_from_id(fellow_tuple[0])
+            fellow_before = fellow
+            fellow.first_name = fellow_tuple[1]
+            fellow.last_name = fellow_tuple[2]
+            fellow.allocated_office_space = \
+                self.get_room_object_from_name(fellow_tuple[4])
+            fellow.allocated_living_space = \
+                self.get_room_object_from_name(fellow_tuple[5])
+            fellow.wants_accommodation = True if fellow_tuple[6] else False
+            if fellow_before != fellow:
+                modified_fellows = fellow
+        elif fellow_tuple[0] in [staff.person_id for staff in self.staff]:
+            self.print_info("A staff member with the ID '%s' already "
+                            "exists. Not loading Fellow '%s' '%s"
+                            % (fellow_tuple[0], fellow_tuple[1],
+                               fellow_tuple[2]))
+        else:
+            # Create a new fellow
+            fellow = Fellow(
+                    fellow_tuple[1], fellow_tuple[2], 
+                    person_id=fellow_tuple[0],
+                    allocated_living_space=self.
+                    get_room_object_from_name(fellow_tuple[5]),
+                    wants_accommodation=True if fellow_tuple[6]
+                    else False)
+            fellow.allocated_office_space = \
+                self.get_room_object_from_name(fellow_tuple[4])
+
+            # Only append new fellow
+            self.fellows.append(fellow)
+            loaded_fellow = fellow
+        return {
+            "loaded_fellow": loaded_fellow,
+            "modified_fellow": modified_fellow
+        }
+
+    def add_staff_database_data_to_amity(self, staff_tuple):
+        """
+        Add Staff data to amity from an SQLITE Database tuple
+        :param staff_tuple: A staff in Amity
+        :type staff_tuple: A tuple containing staff data
+        """
+        loaded_staff = None
+        modified_staff = None
+        if staff_tuple[0] in [staff.person_id for staff in self.staff]:
+            # get staff with similar id and apply values
+            staff = self.get_person_object_from_id(staff_tuple[0])
+            staff_before = staff
+            staff.person_id = staff_tuple[0]
+            staff.first_name = staff_tuple[1]
+            staff.last_name = staff_tuple[2]
+            staff.allocated_office_space = \
+                self.get_room_object_from_name(staff_tuple[4])
+            if staff_before != staff:
+                modified_staff = staff
+            else:
+                modified_staff = []
+        elif staff_tuple[0] in [fellow.person_id for fellow in self.fellows]:
+            self.print_info("A fellow with the ID '%s' already "
+                            "exists. Not loading Staff '%s' '%s"
+                            % (staff_tuple[0], staff_tuple[1], staff_tuple[2]))
+        else:
+            # Create an entirely new Staff object
+            staff = Staff(staff_tuple[1], staff_tuple[2], 
+                          person_id=staff_tuple[0])
+            staff.allocated_office_space = \
+                self.get_room_object_from_name(staff_tuple[4])
+            # Only append new staff
+            self.staff.append(staff)
+            loaded_staff = staff
+        return {
+            "loaded_staff": loaded_staff,
+            "modified_staff": modified_staff
+        }
 
     def add_room_database_data_to_amity(self, room_list):
         """
