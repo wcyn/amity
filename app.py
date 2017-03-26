@@ -394,7 +394,7 @@ class AmityInteractive(cmd.Cmd):
         """
         allocations = amity.print_allocations(args['--o'])
         if isinstance(allocations, str):
-            print_error(allocations)
+            print_info(allocations)
         else:
             fellows = [fellow for fellow in allocations if isinstance(
                 fellow, Fellow)]
@@ -416,6 +416,9 @@ class AmityInteractive(cmd.Cmd):
         result = amity.print_unallocated(args['--o'])
         if isinstance(result, str):
             print_info(result)
+        else:
+            print_subtitle("Unallocated")
+            pretty_print_data(result)
 
     @docopt_cmd
     def do_print_room(self, args):

@@ -7,6 +7,7 @@ from pathlib import Path
 from termcolor import cprint, colored
 
 from models.config import Config
+from models.database import Database
 from models.room import LivingSpace, Office, Room
 from models.person import Staff, Fellow
 
@@ -87,50 +88,12 @@ class Amity(object):
             else:
                 return Config.error_codes[5] + " '%s'" % role
             # Randomly allocate office to new person
-            if not self.offices:
-                self.print_info("There exists no offices to assign to "
-                                "'%s %s'" % (new_person.first_name,
-                                             new_person.last_name))
-            else:
-                room = self.randomly_allocate_room(
-                    new_person, Config.allowed_office_strings[0])
-                if room:
-                    self.print_info("Randomly allocating office to %s..." %
-                                    new_person.first_name)
-                    # time.sleep(1)
-                    self.print_info_result("Allocated office: %s" % room.name)
-                else:
-                    self.print_info("All offices are full. No office to "
-                                    "assign to '%s %s'" %
-                                    (new_person.first_name,
-                                     new_person.last_name))
+            self.allocate_office_to_new_person(new_person)
 
             if wants_accommodation:
                 if role.lower() in Config.allowed_fellow_strings:
                     # Randomly assign available living space to fellow
-                    if not self.living_spaces:
-                        self.print_info(
-                            "There exists no living space to assign "
-                            "fellow to")
-                    else:
-                        self.print_info("Randomly allocating living space to "
-                                        "%s..." % new_person.first_name)
-                        # time.sleep(1)
-                        room = self.randomly_allocate_room(
-                            new_person,
-                            Config.allowed_living_space_strings[0])
-
-                        if room:
-                            self.print_info_result(
-                                "Allocated living space: %s" % room.name)
-                            # Reset wants accommodation to False since they now
-                            # have accommodation
-                            new_person.wants_accommodation = False
-                        else:
-                            self.print_info(
-                                "All living spaces are full. No living space "
-                                "to assign to '%s %s'" %
-                                (new_person.first_name, new_person.last_name))
+                    self.allocate_living_room_to_new_fellow(new_person)
                 else:
                     self.print_error(Config.error_codes[10])
             return new_person
@@ -140,6 +103,60 @@ class Amity(object):
         except Exception as error:
             self.print_info(error)
             raise error
+
+    def allocate_office_to_new_person(self, person):
+        """
+        Randomly allocate Office to new person
+        :param person: A fellow or staff
+        :type person: Fellow or Staff instance
+        """
+        if not self.offices:
+            self.print_info("There exists no offices to assign to "
+                            "'%s %s'" % (person.first_name,
+                                         person.last_name))
+        else:
+            room = self.randomly_allocate_room(
+                    person, Config.allowed_office_strings[0])
+            if room:
+                self.print_info("Randomly allocating office to %s..." %
+                                person.first_name)
+                # time.sleep(1)
+                self.print_info_result("Allocated office: %s" % room.name)
+            else:
+                self.print_info("All offices are full. No office to "
+                                "assign to '%s %s'" %
+                                (person.first_name,
+                                 person.last_name))
+
+    def allocate_living_room_to_new_fellow(self, fellow):
+        """
+        Sort out the allocation of a living room to a new fellow
+        :param fellow: A fellow in Amity
+        :type fellow: Fellow instance
+        """
+        if not self.living_spaces:
+            self.print_info(
+                    "There exists no living space to assign "
+                    "fellow to")
+        else:
+            self.print_info("Randomly allocating living space to "
+                            "%s..." % fellow.first_name)
+            # time.sleep(1)
+            room = self.randomly_allocate_room(
+                    fellow,
+                    Config.allowed_living_space_strings[0])
+
+            if room:
+                self.print_info_result(
+                        "Allocated living space: %s" % room.name)
+                # Reset wants accommodation to False since they now
+                # have accommodation
+                fellow.wants_accommodation = False
+            else:
+                self.print_info(
+                        "All living spaces are full. No living space "
+                        "to assign to '%s %s'" %
+                        (fellow.first_name, fellow.last_name))
 
     @staticmethod
     def allocate_room_to_person(person, room, reallocate=False):
@@ -154,8 +171,6 @@ class Amity(object):
         :return:
         :rtype:
         """
-        print("room '%s' and person '%s' allocate room to person" % (room,
-                                                                     person))
         try:
             if room.get_max_occupants() - room.num_of_occupants:
                 # Should not assign a living space to a staff member
@@ -362,24 +377,24 @@ class Amity(object):
                 + fellows_with_only_office_space
 
             unallocated = staff + fellows
-            message = None
             if not unallocated:
-                message = "No unallocated to print"
+                return "No unallocated people data to print"
 
             if filename:
                 if not isinstance(filename, str):
                     raise TypeError
                 # Clean filename. Remove unwanted filename characters
                 filename = ''.join(x for x in filename if x not in "\/:*?<>|")
+                self.print_info("Printing Allocations to file '%s'..."
+                                % filename)
                 with open(filename, 'w') as f:
                     f.writelines(unallocated)
             else:
                 for allocation in unallocated:
                     print(allocation.strip())
-            return {"filename": filename, "unallocated": unallocated,
-                    "message": message}
-        except Exception as e:
-            raise e
+            return {'filename': filename, 'unallocated': unallocated}
+        except TypeError as error:
+            raise error
 
     def print_room(self, room_name):
         """
@@ -431,7 +446,7 @@ class Amity(object):
 
     def save_state(self, database_name=None, path=None, override=False):
         """
-
+        Saves data from amity into a specified database file
         :param path:
         :type path:
         :param database_name:
@@ -477,48 +492,23 @@ class Amity(object):
             if isinstance(connection, sqlite3.Connection):
                 cursor = connection.cursor()
                 self.print_info("Creating rooms table...")
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS rooms
-                    (name varchar(50) PRIMARY KEY,
-                    type varchar(15))
-                      ''')
+                Database.create_rooms_table(cursor)
                 self.print_info("Creating people table...")
-                cursor.execute('''
-                    CREATE TABLE IF NOT EXISTS people
-                    (id INTEGER PRIMARY KEY,
-                    first_name varchar(50) NOT NULL,
-                    last_name varchar(50) NOT NULL,
-                    role varchar(50),
-                    allocated_office_space varchar(50),
-                    allocated_living_space varchar(50),
-                    wants_accommodation INTEGER DEFAULT 0)
-                  ''')
 
                 # Save data to database
                 if self.get_all_rooms():
                     self.print_info("Saving rooms to Database...")
-                    cursor.executemany(
-                            "INSERT OR REPLACE INTO rooms (name, "
-                            "type) values (?, ?)", self.tuplize_room_data(
-                                    self.get_all_rooms()))
+                    Database.insert_room_data(
+                            cursor,
+                            self.tuplize_room_data(self.get_all_rooms()))
                 if self.fellows:
                     self.print_info("Saving fellows to Database...")
-                    cursor.executemany("INSERT OR REPLACE INTO people (id, "
-                                       "first_name, last_name, "
-                                       "role, allocated_office_space, "
-                                       "allocated_living_space, "
-                                       "wants_accommodation) values "
-                                       "(?, ?, ?, ?, ?, ?, ?)",
-                                       self.tuplize_fellow_data(self.fellows))
+                    Database.insert_people_data(
+                            cursor, self.tuplize_fellow_data(self.fellows))
                 if self.staff:
                     self.print_info("Saving staff to Database...")
-                    cursor.executemany("INSERT OR REPLACE INTO people (id, "
-                                       "first_name, last_name, role, "
-                                       "allocated_office_space, "
-                                       "allocated_living_space, "
-                                       "wants_accommodation) "
-                                       "values (?, ?, ?, ?, ?, ?, ?)",
-                                       self.tuplize_staff_data(self.staff))
+                    Database.insert_people_data(
+                            cursor, self.tuplize_staff_data(self.staff))
                 connection.commit()
                 connection.close()
             else:
@@ -532,7 +522,7 @@ class Amity(object):
 
     def load_state(self, database_name=None, path=None):
         """
-
+        Loads Data from an SQLITE Database into Amity
         :param database_name:
         :type database_name:
         :param path:
@@ -564,21 +554,12 @@ class Amity(object):
             if isinstance(connection, sqlite3.Connection):
                 self.print_info("Loading data from the database...")
                 cursor = connection.cursor()
-                # Check if database is empty
-                cursor.execute(
-                        "SELECT name FROM sqlite_master WHERE type='table' "
-                        "AND name='people';")
-                data = cursor.fetchall()
-                cursor.execute("SELECT name FROM sqlite_master WHERE "
-                               "type='table' AND name='rooms';")
-                data += cursor.fetchall()
-                if not data:
+
+                if Database.database_is_empty(cursor):
                     return "No data to Load. Empty database '%s'" % \
                            database_name
-                cursor.execute("SELECT * FROM people")
-                people = cursor.fetchall()
-                cursor.execute("SELECT * FROM rooms")
-                rooms = cursor.fetchall()
+                people = Database.get_all_people(cursor)
+                rooms = Database.get_all_rooms(cursor)
                 room_objects = self.add_room_database_data_to_amity(rooms)
                 people_objects = self.add_people_database_data_to_amity(people)
 
@@ -984,8 +965,7 @@ class Amity(object):
         :return:
         :rtype:
         """
-        cprint("\t%s" % text, 'cyan')\
-
+        cprint("\t%s" % text, 'cyan')
 
     @staticmethod
     def print_info_result(text):
@@ -1007,33 +987,4 @@ class Amity(object):
         :return:
         :rtype:
         """
-        cprint("\t%s" % text, 'magenta')\
-
-
-
-# camelot = Office("Camelot")
-# ant = LivingSpace("Ant")
-# jane = Fellow("Jane", "Kay", person_id=2, allocated_office_space="camelot",
-#               allocated_living_space="ant")
-# #
-# a = Amity()
-# a.get_person_object_from_id(jane.person_id)
-# a.offices = [camelot]
-# jane.allocated_office_space = camelot
-#
-# a.add_person("Kate", "Mitch", "staff")
-# a.add_person("Maria", "Mitch", "staff")
-# a.fellows += [jane]
-#
-# a.load_people('files/test_people.in')
-
-# a.save_state()
-#
-# people = a.get_all_people()
-# for person in people:
-#     print("Person: ", person.__dict__)
-#
-# print("\nJane: ", jane.__dict__)
-# print("\nKate: ", a.staff[0].__dict__)
-# print("\nMaria: ", str(a.staff[1].__dict__))
-# print("\nMaria: ", str(a.offices[0].__dict__))
+        cprint("\t%s" % text, 'magenta')
