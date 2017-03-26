@@ -471,7 +471,7 @@ class AmityInteractive(cmd.Cmd):
         :param args:
         :type args:
         """
-        print("\nCiao!")
+        cprint("\n Ciao! :) \n", 'yellow', attrs=['reverse'])
         exit()
 
     @docopt_cmd

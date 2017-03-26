@@ -1,7 +1,6 @@
 import re
 import sqlite3
 import random
-import time
 
 from pathlib import Path
 
@@ -272,10 +271,10 @@ class Amity(object):
                 return Config.error_codes[14] + " '%s'" % filename
             return loaded_people
 
-        except FileNotFoundError as e:
+        except FileNotFoundError:
             return Config.error_codes[12] + " '%s'" % filename
-        except TypeError as e:
-            raise e
+        except TypeError as error:
+            raise error
 
     def print_allocations(self, filename=None):
         """
@@ -559,7 +558,7 @@ class Amity(object):
                 database_file_path = path + "/" + database_name
             else:
                 database_file_path = Config.database_directory + database_name
-            self.print_info("Database path: ", database_file_path)
+            self.print_info("Database path: '%s'" % database_file_path)
 
             db_path = Path(database_file_path)
 
@@ -765,7 +764,7 @@ class Amity(object):
                 person_id = int(person_id)
                 person = [person for person in self.get_all_people()
                           if person.person_id == person_id]
-            except ValueError as error:
+            except ValueError:
                 return 'The person id must be an Integer'
             if person:
                 return person[0]
