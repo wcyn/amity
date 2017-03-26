@@ -39,4 +39,3 @@ class Config(object):
         17: "Invalid character(s) in the database name",
         18: "Non-existent database"
     }
-

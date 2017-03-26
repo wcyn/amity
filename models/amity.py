@@ -432,8 +432,8 @@ class Amity(object):
     def save_state(self, database_name=None, path=None, override=False):
         """
 
-        :param path: 
-        :type path: 
+        :param path:
+        :type path:
         :param database_name:
         :type database_name:
         :param override:
@@ -453,7 +453,6 @@ class Amity(object):
                 database_file_path = path + "/" + database_name
             else:
                 database_file_path = Config.database_directory + database_name
-            
             db_path = Path(database_file_path)
 
             if not self.offices + self.living_spaces + self.fellows \
@@ -464,7 +463,6 @@ class Amity(object):
                     Config.default_db_name:
                 self.print_info(
                         "About to override database '%s'" % database_name)
-                
                 while True:
                     override = input(colored("Override? (Y/N): ", 'green'))
                     if override.lower() in Config.allowed_yes_strings:
@@ -484,7 +482,6 @@ class Amity(object):
                     (name varchar(50) PRIMARY KEY,
                     type varchar(15))
                       ''')
-                
                 self.print_info("Creating people table...")
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS people
@@ -527,10 +524,8 @@ class Amity(object):
             else:
                 self.print_info("Data not saved")
                 return connection
-        
         except TypeError as error:
             raise error
-        
         except Exception as e:
             # Print out the sqlite error
             self.print_error("Error: %s" % e)
@@ -657,10 +652,10 @@ class Amity(object):
                         modified_staff.append(staff)
                     else:
                         modified_staff = []
-                elif person[0] in [fellow.person_id for fellow 
-                                   in self.fellows]: 
+                elif person[0] in [fellow.person_id for fellow
+                                   in self.fellows]:
                     self.print_info("A fellow with the ID '%s' already "
-                                    "exists. Not loading Staff '%s' '%s" 
+                                    "exists. Not loading Staff '%s' '%s"
                                     % (person[0], person[1], person[2]))
                 else:
                     # Create an entirely new Staff object
@@ -731,7 +726,7 @@ class Amity(object):
                 self.print_error('Skipping invalid data...')
         return {"loaded_offices": loaded_offices,
                 "loaded_living_spaces": loaded_living_spaces}
-    
+
     def get_room_object_from_name(self, name):
         """
 
