@@ -12,7 +12,7 @@ branches:
     - tests
     - features
 script:
-- nosetests --rednose --with-coverage --cover-package=app
+- nosetests --rednose --with-coverage --cover-package=models
 after_success: coveralls
 cache: pip
 notifications:
