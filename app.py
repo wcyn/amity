@@ -16,11 +16,7 @@ Usage:
     app.py save_state [--db=sqlite_database]
     app.py load_state [<sqlite_database>]
     app.py list_people [-f|-s]
-    app.py list_fellows
-    app.py list_staff
-    app.py list_rooms
-    app.py list_offices
-    app.py list_living_spaces
+    app.py list_rooms [-o|-l]
     app.py (-h | --help)
     app.py (-v | --version)
     app.py (-i | --interactive)
@@ -144,6 +140,49 @@ def color_list(items, color, attrs=[]):
     :rtype:
     """
     return [colored(item, color, attrs=attrs) for item in items]
+
+
+def print_loaded_people(people_dict):
+    """
+
+    :param people_dict:
+    :type people_dict:
+    """
+    if people_dict['loaded_fellows'] \
+            or people_dict['loaded_staff']:
+        people = amity.translate_fellow_data_to_dict(
+                people_dict['loaded_fellows']) + \
+                 amity.translate_staff_data_to_dict(
+                         people_dict['loaded_staff'])
+        print_subtitle("Loaded People")
+        pretty_print_data(people)
+    else:
+        print_info("No new people were loaded from the database")
+
+    if people_dict['modified_fellows'] \
+            or people_dict['modified_staff']:
+        modified_people = amity.translate_fellow_data_to_dict(
+                people_dict['modified_fellows']) + \
+                          amity.translate_staff_data_to_dict(
+                                  people_dict['modified_staff'])
+        print_subtitle("Modified People")
+        pretty_print_data(modified_people)
+
+
+def print_loaded_rooms(rooms_dict):
+    """
+
+    :param rooms_dict:
+    :type rooms_dict:
+    """
+    if rooms_dict['loaded_offices'] or rooms_dict['loaded_living_spaces']:
+        rooms = amity.translate_room_data_to_dict(
+                rooms_dict['loaded_offices'],
+                rooms_dict['loaded_living_spaces'])
+        print_subtitle("Loaded Rooms")
+        pretty_print_data(rooms)
+    else:
+        print_info("No new rooms were loaded from the database")
 
 
 def pretty_print_data(list_of_dicts):
@@ -395,9 +434,11 @@ class AmityInteractive(cmd.Cmd):
         Usage: save_state [--db=sqlite_database]
         """
         if args['--db']:
-            result = amity.save_state(args['--db'])
+            path = ' '.join(args['--db'].split('/')[:-1])
+            database_name = args['--db'].split('/')[-1]
+            result = amity.save_state(database_name, path)
         else:
-            result = amity.save_state()
+            result = amity.save_state(None, 'databases')
 
         if isinstance(result, str):
             print_info(result)
@@ -413,30 +454,13 @@ class AmityInteractive(cmd.Cmd):
             database_name = args['<sqlite_database>'].split('/')[-1]
             result = amity.load_state(database_name, path)
         else:
-            result = amity.load_state()
+            result = amity.load_state(None, 'databases')
 
         if isinstance(result, str):
             print_info(result)
         else:
-            if result['people']['loaded_fellows']\
-                    or result['people']['loaded_staff']:
-                people = amity.translate_fellow_data_to_dict(
-                        result['people']['loaded_fellows']) + \
-                    amity.translate_staff_data_to_dict(
-                    result['people']['loaded_staff'])
-                print_subtitle("Loaded People")
-                pretty_print_data(people)
-            else:
-                print_info("No new people were loaded from the database")
-
-            if result['people']['modified_fellows'] \
-                    or result['people']['modified_staff']:
-                modified_people = amity.translate_fellow_data_to_dict(
-                        result['people']['modified_fellows']) + \
-                         amity.translate_staff_data_to_dict(
-                                 result['people']['modified_staff'])
-                print_subtitle("Modified People")
-                pretty_print_data(modified_people)
+            print_loaded_people(result['people'])
+            print_loaded_rooms(result['rooms'])
 
     @staticmethod
     def do_quit(args):
@@ -472,17 +496,17 @@ class AmityInteractive(cmd.Cmd):
     def do_list_rooms(self, args):
         """
         List rooms in amity.
-        Usage: list_people [-f|-s]
+        Usage: list_rooms [-o|-l]
         """
+        offices = amity.translate_room_data_to_dict(amity.offices, [])
+        living_spaces = amity.translate_room_data_to_dict(
+                [], amity.living_spaces)
         if args['-o']:
-            rooms = amity.translate_room_data_to_dict(amity.offices, [])
+            rooms = offices
         elif args['-l']:
-            rooms = amity.translate_staff_data_to_dict([], amity.living_spaces)
+            rooms = living_spaces
         else:
-            fellows = amity.translate_room_data_to_dict(amity.get_all_rooms())
-            staff = amity.translate_staff_data_to_dict(amity.staff)
-            rooms = fellows + staff
-
+            rooms = offices + living_spaces
         if isinstance(rooms, str):
             print_info(rooms)
         else:

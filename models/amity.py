@@ -273,11 +273,8 @@ class Amity(object):
             return loaded_people
 
         except FileNotFoundError as e:
-            self.print_info(e)
             return Config.error_codes[12] + " '%s'" % filename
         except TypeError as e:
-            raise e
-        except Exception as e:
             raise e
 
     def print_allocations(self, filename=None):
@@ -433,9 +430,11 @@ class Amity(object):
 
         return people_count
 
-    def save_state(self, database_name=None, override=False):
+    def save_state(self, database_name=None, path=None, override=False):
         """
 
+        :param path: 
+        :type path: 
         :param database_name:
         :type database_name:
         :param override:
@@ -451,17 +450,32 @@ class Amity(object):
             else:
                 database_name = Config.default_db_name
 
-            db_file = Config.database_directory + database_name
-            db_path = Path(db_file)
+            if path:
+                database_file_path = path + "/" + database_name
+            else:
+                database_file_path = Config.database_directory + database_name
+            
+            db_path = Path(database_file_path)
 
             if not self.offices + self.living_spaces + self.fellows \
                     + self.staff:
                 return "No data to save"
 
             if db_path.is_file() and not override:
-                return "About to override database '%s'" % database_name
+                self.print_info(
+                        "About to override database '%s'" % database_name)
+                override = input("Override? (Y/N): ")
+                while not override:
+                    if override in Config.allowed_yes_strings:
+                        override = True
+                    elif override in Config.allowed_no_strings:
+                        return "Aborting save state"
+                    else:
+                        self.print_info("Invalid Option")
+                        override = input("Override? (Y/N): ")
 
-            connection = sqlite3.connect(db_file)
+            print("DbFIle: ", database_file_path)
+            connection = sqlite3.connect(database_file_path)
             if isinstance(connection, sqlite3.Connection):
                 cursor = connection.cursor()
                 cursor.execute('''
@@ -490,8 +504,8 @@ class Amity(object):
                     cursor.executemany("INSERT OR REPLACE INTO people (id, "
                                        "first_name, last_name, "
                                        "role allocated_office_space, "
-                                       "allocated_living_space, wants_"
-                                       "accommodation) values "
+                                       "allocated_living_space,"
+                                       "wants_accommodation) values "
                                        "(?, ?, ?, ?, ?, ?, ?)",
                                        self.tuplize_fellow_data(self.fellows))
                 if self.staff:
@@ -509,8 +523,8 @@ class Amity(object):
                 self.print_info("Data not saved")
 
         except Exception as e:
+            # Print out the sqlite error
             self.print_error("Error: %s" % e)
-            raise e
 
     def load_state(self, database_name=None, path=None):
         """
@@ -591,11 +605,8 @@ class Amity(object):
 
                 if person[0] in [fellow.person_id for fellow in self.fellows]:
                     # get fellow with similar id and apply values
-                    print("Similar fellow id: ", person)
-                    fellow = [fellow for fellow in self.get_all_people()
-                              if fellow.person_id == person[0]][0]
+                    fellow = self.get_person_object_from_id(person[0])
                     fellow_before = fellow
-                    fellow.person_id = person[0]
                     fellow.first_name = person[1]
                     fellow.last_name = person[2]
                     fellow.allocated_office_space = \
@@ -607,8 +618,11 @@ class Amity(object):
                         modified_fellows.append(fellow)
                     else:
                         modified_fellows = []
+                elif person[0] in [staff.person_id for staff in self.staff]:
+                    self.print_info("A staff member with the ID '%s' already "
+                                    "exists. Not loading Fellow '%s' '%s"
+                                    % (person[0], person[1], person[2]))
                 else:
-                    print("Create new fellow: ", person)
                     # Create a new fellow
                     fellow = Fellow(
                             person[1], person[2], person_id=person[0],
@@ -623,11 +637,10 @@ class Amity(object):
                     self.fellows.append(fellow)
                     loaded_fellows.append(fellow)
             elif person[3].lower() in Config.allowed_staff_strings:
+                # should actually check for all people not just the type
                 if person[0] in [staff.person_id for staff in self.staff]:
-                    print("Similar staff id: ", person)
                     # get staff with similar id and apply values
-                    staff = [staff for staff in self.get_all_people()
-                             if staff.person_id == person[0]][0]
+                    staff = self.get_person_object_from_id(person[0])
                     staff_before = staff
                     staff.person_id = person[0]
                     staff.first_name = person[1]
@@ -638,6 +651,11 @@ class Amity(object):
                         modified_staff.append(staff)
                     else:
                         modified_staff = []
+                elif person[0] in [fellow.person_id for fellow 
+                                   in self.fellows]: 
+                    self.print_info("A fellow with the ID '%s' already "
+                                    "exists. Not loading Staff '%s' '%s" 
+                                    % (person[0], person[1], person[2]))
                 else:
                     # Create an entirely new Staff object
                     print("Create new staff: ", person)
@@ -647,6 +665,10 @@ class Amity(object):
                     # Only append new staff
                     self.staff.append(staff)
                     loaded_staff.append(staff)
+            else:
+                self.print_error("%s '%s'" % (Config.error_codes[5], person[
+                    3]))
+                self.print_error('Skipping invalid data...')
         loaded_people = {
             "loaded_fellows": loaded_fellows,
             "modified_fellows": modified_fellows,
@@ -662,18 +684,49 @@ class Amity(object):
         :return:
         :rtype:
         """
-        loaded_rooms = []
+        loaded_offices = []
+        loaded_living_spaces = []
         for room in room_list:
             if room[1].lower() in Config.allowed_office_strings:
-                office = Office(room[0])
-                self.offices.append(office)
-                loaded_rooms.append(office)
+                if room[0] in [office.name for office in self.offices]:
+                    self.print_info("An office with the name '%s' already "
+                                    "exists. Skipping loading of duplicate "
+                                    "office..."
+                                    % (room[0]))
+                elif room[0] in [living_space.name for living_space
+                                 in self.living_spaces]:
+                    self.print_info("A Living Space with the name '%s' "
+                                    "already exists. Skipping loading of "
+                                    "office with duplicate name..."
+                                    % (room[0]))
+                else:
+                    # Create an entirely new Office
+                    office = Office(room[0])
+                    self.offices.append(office)
+                    loaded_offices.append(office)
             elif room[1].lower() in Config.allowed_living_space_strings:
-                living_space = LivingSpace(room[0])
-                self.living_spaces.append(living_space)
-                loaded_rooms.append(living_space)
-        return loaded_rooms
-
+                if room[0] in [living_space.name for living_space
+                               in self.living_spaces]:
+                    self.print_info("A living space with the name '%s' "
+                                    "already exists. Skipping loading of "
+                                    "duplicate living space..."
+                                    % (room[0]))
+                elif room[0] in [office.name for office in self.offices]:
+                    self.print_info("A Living Space with the name '%s' "
+                                    "already exists. Skipping loading of "
+                                    "office with duplicate name..."
+                                    % (room[0]))
+                else:
+                    # Create an entirely new Living Space
+                    living_space = LivingSpace(room[0])
+                    self.living_spaces.append(living_space)
+                    loaded_living_spaces.append(living_space)
+            else:
+                self.print_error("%s '%s'" % (Config.error_codes[6], room[1]))
+                self.print_error('Skipping invalid data...')
+        return {"loaded_offices": loaded_offices,
+                "loaded_living_spaces": loaded_living_spaces}
+    
     def get_room_object_from_name(self, name):
         """
 
@@ -954,7 +1007,7 @@ class Amity(object):
         :return:
         :rtype:
         """
-        cprint("\t%s" % text, 'red')\
+        cprint("\t%s" % text, 'magenta')\
 
 
 
