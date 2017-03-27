@@ -19,9 +19,7 @@ class Amity(object):
     staff = []  # List of Staff objects
 
     def create_room(self, room_names, room_type='office'):
-
         """
-
         :param room_names:
         :type room_names:
         :param room_type:
@@ -89,13 +87,13 @@ class Amity(object):
                 return Config.error_codes[5] + " '%s'" % role
             # Randomly allocate office to new person
             self.randomly_allocate_room(
-                    new_person, Config.allowed_office_strings[0])
+                new_person, Config.allowed_office_strings[0])
 
             if wants_accommodation:
                 if role.lower() in Config.allowed_fellow_strings:
                     # Randomly assign available living space to fellow
                     self.randomly_allocate_room(
-                            new_person, Config.allowed_living_space_strings[0])
+                        new_person, Config.allowed_living_space_strings[0])
                 else:
                     self.print_error("%s '%s %s'" % (
                         Config.error_codes[10], new_person.first_name,
@@ -127,27 +125,27 @@ class Amity(object):
                     return Config.error_codes[10]
 
                 already_allocated_office = isinstance(
-                        room, Office) and isinstance(
-                        person.allocated_office_space, Office)
+                    room, Office) and isinstance(
+                    person.allocated_office_space, Office)
                 already_allocated_living_space = isinstance(
-                        room, LivingSpace) and isinstance(
-                        person.allocated_living_space, LivingSpace)
+                    room, LivingSpace) and isinstance(
+                    person.allocated_living_space, LivingSpace)
 
                 if not override:
                     reallocate = True
                     if already_allocated_office:
                         if person.allocated_office_space == room:
                             self.print_error(
-                                    "'%s %s' already allocated office '%s'" %
-                                    (person.first_name, person.last_name,
-                                     room.name))
+                                "'%s %s' already allocated office '%s'" %
+                                (person.first_name, person.last_name,
+                                 room.name))
                             return False
                         # Person already has office space
                         self.print_info("About to move %s from %s to %s" % (
                             person.first_name,
                             person.allocated_office_space.name, room.name))
                         reallocate = self.handle_yes_no_input(
-                                "Move? (Y/N): ", "Aborting Reallocation")
+                            "Move? (Y/N): ", "Aborting Reallocation")
                     elif already_allocated_living_space:
                         if person.allocated_living_space == room:
                             self.print_error("Person already allocated "
@@ -158,7 +156,7 @@ class Amity(object):
                             person.first_name,
                             person.allocated_living_space.name, room.name))
                         reallocate = self.handle_yes_no_input(
-                                "Move? (Y/N): ", "Aborted Reallocation")
+                            "Move? (Y/N): ", "Aborted Reallocation")
                     if not reallocate:
                         return  # Abort Mission
 
@@ -198,8 +196,8 @@ class Amity(object):
         if room_type in Config.allowed_office_strings:
             if not self.offices:
                 self.print_info(
-                        "There exists no offices to assign to '%s %s'" % (
-                            person.first_name, person.last_name))
+                    "There exists no offices to assign to '%s %s'" % (
+                        person.first_name, person.last_name))
                 return None
             if offices_not_full:
                 self.print_info("Randomly allocating office to %s..." %
@@ -216,8 +214,8 @@ class Amity(object):
         else:
             if not self.living_spaces:
                 self.print_info(
-                        "There exists no living spaces to assign to fellow "
-                        "'%s %s'" % (person.first_name, person.last_name))
+                    "There exists no living spaces to assign to fellow "
+                    "'%s %s'" % (person.first_name, person.last_name))
                 return None
             if living_spaces_not_full:
                 self.print_info("Randomly allocating living space to %s..." %
@@ -226,7 +224,7 @@ class Amity(object):
                 living_space = random.choice(living_spaces_not_full)
                 self.allocate_room_to_person(person, living_space)
                 room = living_space
-                self.print_info_result("Allocated living space: %s" % 
+                self.print_info_result("Allocated living space: %s" %
                                        room.name)
                 # Reset wants accommodation to False since they now
                 # have accommodation
@@ -264,17 +262,17 @@ class Amity(object):
 
                     if person_data[2].lower() in Config.allowed_fellow_strings:
                         fellow = self.add_person(
-                                person_data[0], person_data[1],
-                                Config.allowed_fellow_strings[0],
-                                wants_accommodation)
+                            person_data[0], person_data[1],
+                            Config.allowed_fellow_strings[0],
+                            wants_accommodation)
                         loaded_people.append(fellow)
                     elif person_data[2].lower() in \
                             Config.allowed_staff_strings:
                         staff = self.add_person(
-                                person_data[0],
-                                person_data[1],
-                                Config.allowed_staff_strings[0],
-                                wants_accommodation)
+                            person_data[0],
+                            person_data[1],
+                            Config.allowed_staff_strings[0],
+                            wants_accommodation)
                         loaded_people.append(staff)
                 else:
                     self.print_info("Ignoring badly formatted line: %s " %
@@ -316,22 +314,22 @@ class Amity(object):
                 return "No allocations to print"
 
             allocated_staff_print = [' '.join(
-                    (staff.first_name, staff.last_name, "Staff",
-                     staff.allocated_office_space.name, '\n'))
-                    for staff in allocated_staff]
+                (staff.first_name, staff.last_name, "Staff",
+                 staff.allocated_office_space.name, '\n'))
+                for staff in allocated_staff]
             fellows_allocated_both_print = [' '.join(
-                    (fellow.first_name, fellow.last_name, "Fellow",
-                     fellow.allocated_office_space.name,
-                     fellow.allocated_living_space.name, '\n'))
-                     for fellow in fellows_allocated_both]
+                (fellow.first_name, fellow.last_name, "Fellow",
+                 fellow.allocated_office_space.name,
+                 fellow.allocated_living_space.name, '\n'))
+                for fellow in fellows_allocated_both]
             fellows_with_only_living_space_print = [' '.join(
-                    (fellow.first_name, fellow.last_name, "Fellow", "-",
-                     fellow.allocated_living_space.name, '\n'))
-                     for fellow in fellows_with_only_living_space]
+                (fellow.first_name, fellow.last_name, "Fellow", "-",
+                    fellow.allocated_living_space.name, '\n'))
+                for fellow in fellows_with_only_living_space]
             fellows_with_only_office_space_print = [' '.join(
-                    (fellow.first_name, fellow.last_name, "Fellow",
-                     fellow.allocated_office_space.name, "-", '\n'))
-                     for fellow in fellows_with_only_office_space]
+                (fellow.first_name, fellow.last_name, "Fellow",
+                 fellow.allocated_office_space.name, "-", '\n'))
+                for fellow in fellows_with_only_office_space]
 
             allocations_print = allocated_staff_print\
                 + fellows_allocated_both_print \
@@ -372,17 +370,17 @@ class Amity(object):
                                "Staff", '\n'))
                      for staff in self.get_unallocated_staff()]
             fellows_with_neither_allocations = [' '.join(
-                    (fellow.first_name, fellow.last_name, "Fellow", '\n'))
-                    for fellow in self.get_fellows_with_no_allocation()]
+                (fellow.first_name, fellow.last_name, "Fellow", '\n'))
+                for fellow in self.get_fellows_with_no_allocation()]
             fellows_with_only_living_space = [' '.join(
-                    (fellow.first_name, fellow.last_name, "Fellow",
-                     "(No Office)", fellow.allocated_living_space.name, '\n'))
-                     for fellow in self.get_fellows_with_living_space_only()]
+                (fellow.first_name, fellow.last_name, "Fellow",
+                 "(No Office)", fellow.allocated_living_space.name, '\n'))
+                for fellow in self.get_fellows_with_living_space_only()]
             fellows_with_only_office_space = [' '.join(
-                    (fellow.first_name, fellow.last_name, "Fellow",
-                     fellow.allocated_office_space.name, "(No Living Space)",
-                     '\n'))
-                     for fellow in self.get_fellows_with_office_space_only()]
+                (fellow.first_name, fellow.last_name, "Fellow",
+                 fellow.allocated_office_space.name, "(No Living Space)",
+                 '\n'))
+                for fellow in self.get_fellows_with_office_space_only()]
             fellows = fellows_with_neither_allocations \
                 + fellows_with_only_living_space \
                 + fellows_with_only_office_space
@@ -554,9 +552,9 @@ class Amity(object):
             if db_path.is_file() and not override and database_name != \
                     Config.default_db_name:
                 self.print_info(
-                        "About to override database '%s'" % database_name)
+                    "About to override database '%s'" % database_name)
                 override = self.handle_yes_no_input(
-                        "Override? (Y/N): ", "Aborted save state")
+                    "Override? (Y/N): ", "Aborted save state")
                 if not override:
                     return
 
@@ -572,16 +570,15 @@ class Amity(object):
                 if self.get_all_rooms():
                     self.print_info("Saving rooms to Database...")
                     Database.insert_room_data(
-                            cursor,
-                            self.tuplize_room_data(self.get_all_rooms()))
+                        cursor, self.tuplize_room_data(self.get_all_rooms()))
                 if self.fellows:
                     self.print_info("Saving fellows to Database...")
                     Database.insert_people_data(
-                            cursor, self.tuplize_fellow_data(self.fellows))
+                        cursor, self.tuplize_fellow_data(self.fellows))
                 if self.staff:
                     self.print_info("Saving staff to Database...")
                     Database.insert_people_data(
-                            cursor, self.tuplize_staff_data(self.staff))
+                        cursor, self.tuplize_staff_data(self.staff))
                 connection.commit()
                 connection.close()
                 self.print_info("Data Saved Successfully")
@@ -715,12 +712,12 @@ class Amity(object):
         else:
             # Create a new fellow
             fellow = Fellow(
-                    fellow_tuple[1], fellow_tuple[2],
-                    person_id=fellow_tuple[0],
-                    allocated_living_space=self.
-                    get_room_object_from_name(fellow_tuple[5]),
-                    wants_accommodation=True if fellow_tuple[6]
-                    else False)
+                fellow_tuple[1], fellow_tuple[2],
+                person_id=fellow_tuple[0],
+                allocated_living_space=self.
+                get_room_object_from_name(fellow_tuple[5]),
+                wants_accommodation=True if fellow_tuple[6]
+                else False)
             fellow.allocated_office_space = \
                 self.get_room_object_from_name(fellow_tuple[4])
 
@@ -834,12 +831,12 @@ class Amity(object):
         allocated_fellows = []
         for staff in staff_need_office:
             room = self.randomly_allocate_room(
-                    staff, Config.allowed_office_strings[0])
+                staff, Config.allowed_office_strings[0])
             if issubclass(type(room), Room):
                 allocated_staff.append(staff)
         for fellow in fellows_need_office:
             room = self.randomly_allocate_room(
-                    fellow, Config.allowed_office_strings[0])
+                fellow, Config.allowed_office_strings[0])
             if issubclass(type(room), Room):
                 allocated_fellows.append(fellow)
         for fellow in need_living_space:
@@ -1160,7 +1157,7 @@ class Amity(object):
         """
         while True:
             override = input(
-                    colored(prompt, 'green'))
+                colored(prompt, 'green'))
             if override.lower() in Config.allowed_yes_strings:
                 return True
             elif override.lower() in Config.allowed_no_strings:
