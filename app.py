@@ -8,7 +8,7 @@ A room allocation system for Fellows and Staff.
 Usage:
     app.py create_room <room_name>... [-l|-o]
     app.py add_person <first_name> <last_name> <role> [<wants_accommodation>]
-    app.py reallocate_person <person_identifier> <new_room_name>
+    app.py reallocate_person <person_identifier> <new_room_name> [-f]
     app.py load_people <filename>
     app.py print_allocations [-o=filename]
     app.py print_unallocated [-o=filename]
@@ -42,9 +42,10 @@ Options:
     -i --interactive        Interactive Mode
     -h --help               Show this screen and exit from amity
     --o FILENAME            Specify filename
-    --db sqlite_database     Name of SQLite Database to load from or save
-    data to
-    -v --version
+    --db sqlite_database    Name of SQLite Database to load from or save
+                            data to
+    -v --version            Amity Version
+    -f --force              Force reallocation of room
 """
 
 import os
@@ -202,9 +203,9 @@ def pretty_print_data(list_of_dicts):
                 if key not in headers:
                     headers.append(key)
             table_rows.append(color_list([dict_item[key] if key in dict_item
-                              else not_applicable for key in headers]
-                              + ((max_len - len(headers)) * [not_applicable]),
-                            'blue'))
+                              else not_applicable for key in headers] +
+                              ((max_len - len(headers)) * [not_applicable]),
+                                'blue'))
         table_rows.insert(0,  color_list(format_dict_keys(headers), 'blue',
                                          attrs=['dark']))
 
@@ -248,9 +249,9 @@ class AmityInteractive(cmd.Cmd):
     """
         The Amity Command Line Interface to be used for User interaction
     """
-    intro = colored("\nWelcome to my Amity!"
-                    + "\n\t<Type 'help' to see the list of available "
-                      "commands>\n", 'blue', attrs=['dark'])
+    intro = colored("\nWelcome to my Amity!" +
+                    "\n\t<Type 'help' to see the list of available "
+                    "commands>\n", 'blue', attrs=['dark'])
 
     amity_prompt = colored('Amity # ', 'blue', attrs=['bold'])
     prompt = amity_prompt
@@ -340,7 +341,9 @@ class AmityInteractive(cmd.Cmd):
     def do_reallocate_person(self, args):
         """
         Reallocate the person with  person_identifier  to  <new_room_name>
-        Usage: reallocate_person <person_identifier> <new_room_name>
+        Use the option -f to force reallocation if the person is already
+        allocated
+        Usage: reallocate_person <person_identifier> <new_room_name> [-f]
         """
         person_id = args['<person_identifier>']
         new_room_name = args['<new_room_name>']
@@ -351,8 +354,14 @@ class AmityInteractive(cmd.Cmd):
         elif isinstance(room, str):
             print_info(room)
         elif person and room:
-            reallocation = amity.allocate_room_to_person(
-                person, room, True)
+            if args['-f']:
+                reallocation = amity.allocate_room_to_person(
+                    person, room, True)
+            else:
+                reallocation = amity.allocate_room_to_person(
+                        person, room)
+            if not reallocation:
+                return
             if not isinstance(reallocation, str):
                 if isinstance(person, Staff):
                     person_data = amity.translate_staff_data_to_dict([person])

@@ -29,7 +29,7 @@ class Config(object):
         7: "Invalid accommodation option",
         8: "No room name was provided",
         9: "Person name was not provided",
-        10: "Cannot allocate a living space to a staff member",
+        10: "Cannot allocate a living space to staff member",
         11: "Cannot add person. The room is fully occupied",
         12: "Cannot find the file",
         13: "The file is empty",

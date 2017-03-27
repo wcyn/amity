@@ -159,20 +159,17 @@ class Amity(object):
                         "to assign to '%s %s'" %
                         (fellow.first_name, fellow.last_name))
 
-    def allocate_room_to_person(self, person, room):
+    def allocate_room_to_person(self, person, room, override=False):
         """
 
         :param person:
         :type person:
         :param room:
         :type room:
-        :param reallocate:
-        :type reallocate:
         :return:
         :rtype:
         """
         try:
-            print("Allocating Room to person?")
             if room.get_max_occupants() - room.num_of_occupants:
                 # Should not assign a living space to a staff member
                 if isinstance(person, Staff) and isinstance(room, LivingSpace):
@@ -185,38 +182,39 @@ class Amity(object):
                         room, LivingSpace) and isinstance(
                         person.allocated_living_space, LivingSpace)
 
-                reallocate = True
-                if already_allocated_office:
-                    if person.allocated_office == room:
-                        self.print_error("Person already allocated "
-                                         "office '%s'" % room.name)
-                        return
-                    # Person already has office space
-                    self.print_info("About to move %s from %s to %s" % (
-                        person.first_name,
-                        person.allocated_office_space.name, room.name))
-                    reallocate = self.handle_yes_no_input(
-                            "Move? (Y/N): ", "Aborting Reallocation")
-
-                elif already_allocated_living_space:
-                    if person.allocated_living_space == room:
-                        self.print_error("Person already allocated "
-                                         "living space '%s'" % room.name)
-                        return
-                    # Person already has office space
-                    self.print_info("About to move %s from %s to %s" % (
-                        person.first_name,
-                        person.allocated_living_space.name, room.name))
-                    reallocate = self.handle_yes_no_input(
-                            "Move? (Y/N): ", "Aborted Reallocation")
-                if not reallocate:
-                    return  # Abort Mission
+                if not override:
+                    reallocate = True
+                    if already_allocated_office:
+                        if person.allocated_office_space == room:
+                            self.print_error(
+                                    "'%s %s' already allocated office '%s'" %
+                                    (person.first_name, person.last_name,
+                                     room.name))
+                            return False
+                        # Person already has office space
+                        self.print_info("About to move %s from %s to %s" % (
+                            person.first_name,
+                            person.allocated_office_space.name, room.name))
+                        reallocate = self.handle_yes_no_input(
+                                "Move? (Y/N): ", "Aborting Reallocation")
+                    elif already_allocated_living_space:
+                        if person.allocated_living_space == room:
+                            self.print_error("Person already allocated "
+                                             "living space '%s'" % room.name)
+                            return
+                        # Person already has office space
+                        self.print_info("About to move %s from %s to %s" % (
+                            person.first_name,
+                            person.allocated_living_space.name, room.name))
+                        reallocate = self.handle_yes_no_input(
+                                "Move? (Y/N): ", "Aborted Reallocation")
+                    if not reallocate:
+                        return  # Abort Mission
 
                 if isinstance(room, Office):
                     person.allocated_office_space = room
                 elif isinstance(room, LivingSpace):
                     person.allocated_living_space = room
-
             else:
                 return Config.error_codes[11]
             return person
@@ -317,8 +315,8 @@ class Amity(object):
     def print_allocated_people(self, filename=None, path=None):
         """
 
-        :param path: 
-        :type path: 
+        :param path:
+        :type path:
         :param filename:
         :type filename:
         :return:
@@ -365,7 +363,7 @@ class Amity(object):
                 if not isinstance(filename, str):
                     raise TypeError
                 # Clean filename. Remove unwanted filename characters
-                filename = ''.join(x for x in filename if x not in 
+                filename = ''.join(x for x in filename if x not in
                                    "\"'\/:*?<>|")
                 if path:
                     file_path = path + "/" + filename
@@ -384,8 +382,8 @@ class Amity(object):
     def print_unallocated(self, filename=None, path=None):
         """
 
-        :param path: 
-        :type path: 
+        :param path:
+        :type path:
         :param filename:
         :type filename:
         :return:
@@ -399,7 +397,7 @@ class Amity(object):
                     (fellow.first_name, fellow.last_name, "Fellow", '\n'))
                     for fellow in self.get_fellows_with_no_allocation()]
             fellows_with_only_living_space = [' '.join(
-                    (fellow.first_name, fellow.last_name, "Fellow", 
+                    (fellow.first_name, fellow.last_name, "Fellow",
                      "(No Office)", fellow.allocated_living_space.name, '\n'))
                      for fellow in self.get_fellows_with_living_space_only()]
             fellows_with_only_office_space = [' '.join(
@@ -440,8 +438,8 @@ class Amity(object):
     def print_room(self, room_name, verbose=True):
         """
 
-        :param verbose: 
-        :type verbose: 
+        :param verbose:
+        :type verbose:
         :param room_name:
         :type room_name:
         :return:
@@ -730,7 +728,7 @@ class Amity(object):
         else:
             # Create a new fellow
             fellow = Fellow(
-                    fellow_tuple[1], fellow_tuple[2], 
+                    fellow_tuple[1], fellow_tuple[2],
                     person_id=fellow_tuple[0],
                     allocated_living_space=self.
                     get_room_object_from_name(fellow_tuple[5]),
@@ -774,7 +772,7 @@ class Amity(object):
                             % (staff_tuple[0], staff_tuple[1], staff_tuple[2]))
         else:
             # Create an entirely new Staff object
-            staff = Staff(staff_tuple[1], staff_tuple[2], 
+            staff = Staff(staff_tuple[1], staff_tuple[2],
                           person_id=staff_tuple[0])
             staff.allocated_office_space = \
                 self.get_room_object_from_name(staff_tuple[4])
@@ -870,7 +868,7 @@ class Amity(object):
                 person = [person for person in self.get_all_people()
                           if person.person_id == person_id]
             except ValueError:
-                return 'The person id must be an Integer'
+                return 'The person id must be an integer'
             if person:
                 return person[0]
         return "Person with the ID '%s' does not exist" % person_id

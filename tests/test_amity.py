@@ -212,14 +212,12 @@ class TestAmity(unittest.TestCase):
         self.amity.allocate_room_to_person(self.staff, self.office)
         self.assertEqual(2, self.office.num_of_occupants)
 
-    def test_allocate_room_returns_transfer_message_if_person_already_has_room(
+    def test_allocate_room_reallocates_person_if_override_is_true(
             self):
         office2 = Office("krypton")
         self.fellow.allocated_office_space = self.office
-        result = self.amity.allocate_room_to_person(self.fellow, office2)
-        self.assertEqual(result, "About to move %s from %s to %s" % (
-                        self.fellow.first_name,
-                        self.office.name, office2.name))
+        result = self.amity.allocate_room_to_person(self.fellow, office2, True)
+        self.assertEqual(result.allocated_office_space, office2)
 
     def test_allocate_person_decrements_num_of_occupants_in_office_space(self):
         """
