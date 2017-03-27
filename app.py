@@ -17,6 +17,7 @@ Usage:
     app.py load_state [<sqlite_database>]
     app.py list_people [-f|-s]
     app.py list_rooms [-o|-l]
+    app.py allocate_unallocated [-f|-s]
     app.py (-h | --help)
     app.py (-v | --version)
     app.py (-i | --interactive)
@@ -522,6 +523,27 @@ class AmityInteractive(cmd.Cmd):
             print_info(rooms)
         else:
             pretty_print_data(rooms)
+
+    @docopt_cmd
+    def do_allocate_unallocated(self, args):
+        """
+        Randomly allocate rooms to unallocated people
+        Usage: allocate_unallocated [-f|-s]
+        """
+        result = amity.randomly_allocate_unallocated()
+        if result:
+            allocated_staff = amity.translate_staff_data_to_dict(
+                    result['staff'])
+            allocated_fellows = amity.translate_fellow_data_to_dict(
+                    result['fellows'])
+            print_subtitle("Newly Allocated")
+            if args['-s']:
+                pretty_print_data(allocated_staff)
+            elif args['-f']:
+                pretty_print_data(allocated_fellows)
+            else:
+                pretty_print_data(allocated_staff + allocated_fellows)
+
 
 opt = docopt(__doc__, sys.argv[1:], True, 2.0)
 

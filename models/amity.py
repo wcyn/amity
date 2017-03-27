@@ -88,15 +88,18 @@ class Amity(object):
             else:
                 return Config.error_codes[5] + " '%s'" % role
             # Randomly allocate office to new person
-            self.allocate_office_to_new_person(new_person)
+            self.randomly_allocate_room(
+                    new_person, Config.allowed_office_strings[0])
 
             if wants_accommodation:
                 if role.lower() in Config.allowed_fellow_strings:
                     # Randomly assign available living space to fellow
-                    self.allocate_living_room_to_new_fellow(new_person)
+                    self.randomly_allocate_room(
+                            new_person, Config.allowed_living_space_strings[0])
                 else:
                     self.print_error("%s '%s %s'" % (
-                        Config.error_codes[10], first_name, last_name))
+                        Config.error_codes[10], new_person.first_name,
+                        new_person.last_name))
             return new_person
 
         except TypeError as error:
@@ -105,63 +108,11 @@ class Amity(object):
             self.print_info(error)
             raise error
 
-    def allocate_office_to_new_person(self, person):
-        """
-        Randomly allocate Office to new person
-        :param person: A fellow or staff
-        :type person: Fellow or Staff instance
-        """
-        if not self.offices:
-            self.print_info("There exists no offices to assign to "
-                            "'%s %s'" % (person.first_name,
-                                         person.last_name))
-        else:
-            room = self.randomly_allocate_room(
-                    person, Config.allowed_office_strings[0])
-            if room:
-                self.print_info("Randomly allocating office to %s..." %
-                                person.first_name)
-                # time.sleep(1)
-                self.print_info_result("Allocated office: %s" % room.name)
-            else:
-                self.print_info("All offices are full. No office to "
-                                "assign to '%s %s'" %
-                                (person.first_name,
-                                 person.last_name))
-
-    def allocate_living_room_to_new_fellow(self, fellow):
-        """
-        Sort out the allocation of a living room to a new fellow
-        :param fellow: A fellow in Amity
-        :type fellow: Fellow instance
-        """
-        if not self.living_spaces:
-            self.print_info(
-                    "There exists no living space to assign "
-                    "fellow to")
-        else:
-            self.print_info("Randomly allocating living space to "
-                            "%s..." % fellow.first_name)
-            # time.sleep(1)
-            room = self.randomly_allocate_room(
-                    fellow,
-                    Config.allowed_living_space_strings[0])
-
-            if room:
-                self.print_info_result(
-                        "Allocated living space: %s" % room.name)
-                # Reset wants accommodation to False since they now
-                # have accommodation
-                fellow.wants_accommodation = False
-            else:
-                self.print_info(
-                        "All living spaces are full. No living space "
-                        "to assign to '%s %s'" %
-                        (fellow.first_name, fellow.last_name))
-
     def allocate_room_to_person(self, person, room, override=False):
         """
 
+        :param override:
+        :type override:
         :param person:
         :type person:
         :param room:
@@ -243,20 +194,47 @@ class Amity(object):
                                   if living_space.get_max_occupants() -
                                   living_space.num_of_occupants]
 
-        data = None
+        room = None
         if room_type in Config.allowed_office_strings:
+            if not self.offices:
+                self.print_info(
+                        "There exists no offices to assign to '%s %s'" % (
+                            person.first_name, person.last_name))
+                return None
             if offices_not_full:
+                self.print_info("Randomly allocating office to %s..." %
+                                person.first_name)
                 # Randomly select an non full office
                 office = random.choice(offices_not_full)
                 self.allocate_room_to_person(person, office)
-                data = office
+                room = office
+                self.print_info_result("Allocated office: %s" % room.name)
+            else:
+                self.print_info("All offices are full. No office to "
+                                "assign to '%s %s'" %
+                                (person.first_name, person.last_name))
         else:
+            if not self.living_spaces:
+                self.print_info(
+                        "There exists no living spaces to assign to fellow "
+                        "'%s %s'" % (person.first_name, person.last_name))
+                return None
             if living_spaces_not_full:
+                self.print_info("Randomly allocating living space to %s..." %
+                                person.first_name)
                 # Randomly select a non full living space
                 living_space = random.choice(living_spaces_not_full)
                 self.allocate_room_to_person(person, living_space)
-                data = living_space
-        return data
+                room = living_space
+                self.print_info_result("Allocated living space: %s" % 
+                                       room.name)
+                # Reset wants accommodation to False since they now
+                # have accommodation
+                person.wants_accommodation = False
+            else:
+                self.print_info("No free living space to allocate '%s' to"
+                                % person.first_name)
+        return room
 
     def load_people(self, filename):
         """
@@ -434,6 +412,8 @@ class Amity(object):
             return {'filename': filename, 'unallocated': unallocated}
         except TypeError as error:
             raise error
+        except FileNotFoundError as error:
+            self.print_error("%s" % error)
 
     def print_room(self, room_name, verbose=True):
         """
@@ -493,50 +473,53 @@ class Amity(object):
         """
         Prints rooms and the people allocated to those rooms
         """
-        if not filename:
-            rooms = self.get_all_rooms()
-            if rooms:
-                for room in rooms:
-                    self.print_subtitle(room.name)
-                    people = self.print_room(room.name)
-                    if isinstance(people, str):
-                        cprint(people, 'yellow')
-            else:
-                return "There are no rooms yet"
-        else:
-            if not isinstance(filename, str):
-                raise TypeError
-            if path:
-                file_path = path + "/" + filename
-            else:
-                file_path = Config.files_directory + filename
-            # Clean filename. Remove unwanted filename characters
-            filename = ''.join(x for x in filename if x not in "\/:*?<>|")
-            self.print_info("Printing Allocations to file '%s'..."
-                            % filename)
-            # Empty the file first
-            open(file_path, 'w').close()
-            for room in self.get_all_rooms():
-                people = self.print_room(room.name, False)
-                if not isinstance(people, str):
-                    with open(file_path, 'a') as f:
-                        f.write("%s\n%s\n" % (room.name, '-' * len(
-                                room.name)))
-                        for person in people:
-                            if isinstance(person, Staff):
-                                f.write("%s %s %s\n" % (
-                                    person.first_name,
-                                    person.last_name,
-                                    "Staff"))
-                            else:
-                                f.write("%s %s %s\n" % (
-                                    person.first_name,
-                                    person.last_name,
-                                    "Fellow"))
-                        f.write("\n")
+        try:
+            if not filename:
+                rooms = self.get_all_rooms()
+                if rooms:
+                    for room in rooms:
+                        self.print_subtitle(room.name)
+                        people = self.print_room(room.name)
+                        if isinstance(people, str):
+                            cprint(people, 'yellow')
                 else:
-                    self.print_info(people)
-            self.print_info("Printed to file successfully!")
+                    return "There are no rooms yet"
+            else:
+                if not isinstance(filename, str):
+                    raise TypeError
+                if path:
+                    file_path = path + "/" + filename
+                else:
+                    file_path = filename
+                # Clean filename. Remove unwanted filename characters
+                filename = ''.join(x for x in filename if x not in "\/:*?<>|")
+                self.print_info("Printing Allocations to file '%s'..."
+                                % filename)
+                # Empty the file first
+                open(file_path, 'w').close()
+                for room in self.get_all_rooms():
+                    people = self.print_room(room.name, False)
+                    if not isinstance(people, str):
+                        with open(file_path, 'a') as f:
+                            f.write("%s\n%s\n" % (room.name, '-' * len(
+                                    room.name)))
+                            for person in people:
+                                if isinstance(person, Staff):
+                                    f.write("%s %s %s\n" % (
+                                        person.first_name,
+                                        person.last_name,
+                                        "Staff"))
+                                else:
+                                    f.write("%s %s %s\n" % (
+                                        person.first_name,
+                                        person.last_name,
+                                        "Fellow"))
+                            f.write("\n")
+                    else:
+                        self.print_info(people)
+                self.print_info("Printed to file successfully!")
+        except FileNotFoundError as error:
+            self.print_error("%s" % error)
 
     def save_state(self, database_name=None, path=None, override=False):
         """
@@ -607,9 +590,11 @@ class Amity(object):
                 return connection
         except TypeError as error:
             raise error
-        except Exception as e:
+        except FileNotFoundError as error:
+            self.print_error("%s" % error)
+        except sqlite3.OperationalError as error:
             # Print out the sqlite error
-            self.print_error("Error: %s" % e)
+            self.print_error("%s" % error)
 
     def load_state(self, database_name=None, path=None):
         """
@@ -658,8 +643,10 @@ class Amity(object):
                 return {"people": people_objects, "rooms": room_objects}
             else:
                 return connection
-        except Exception as e:
-            raise e
+        except FileNotFoundError as error:
+            self.print_error("%s" % error)
+        except sqlite3.OperationalError as error:
+            self.print_error("%s" % error)
 
     def add_people_database_data_to_amity(self, people_list):
         """
@@ -835,6 +822,35 @@ class Amity(object):
         return {"loaded_offices": loaded_offices,
                 "loaded_living_spaces": loaded_living_spaces}
 
+    def randomly_allocate_unallocated(self):
+        """
+        Randomly Allocates Rooms to staff and fellows
+        """
+        staff_need_office = self.get_unallocated_staff()
+        fellows_need_office = self.get_fellows_with_no_allocation() \
+            + self.get_fellows_with_living_space_only()
+        need_living_space = self.get_fellows_requiring_accommodation()
+        allocated_staff = []
+        allocated_fellows = []
+        for staff in staff_need_office:
+            room = self.randomly_allocate_room(
+                    staff, Config.allowed_office_strings[0])
+            if issubclass(type(room), Room):
+                allocated_staff.append(staff)
+        for fellow in fellows_need_office:
+            room = self.randomly_allocate_room(
+                    fellow, Config.allowed_office_strings[0])
+            if issubclass(type(room), Room):
+                allocated_fellows.append(fellow)
+        for fellow in need_living_space:
+            room = self.randomly_allocate_room(
+                fellow, Config.allowed_living_space_strings[0]
+            )
+            if issubclass(type(room), Room):
+                allocated_fellows.append(fellow)
+        return {'staff': allocated_staff,
+                'fellows': allocated_fellows}
+
     def get_room_object_from_name(self, name):
         """
 
@@ -936,6 +952,16 @@ class Amity(object):
         return [fellow for fellow in self.fellows
                 if fellow.allocated_office_space and not
                 fellow.allocated_living_space and fellow.wants_accommodation]
+
+    def get_fellows_requiring_accommodation(self):
+        """
+
+        :return:
+        :rtype:
+        """
+        return [fellow for fellow in self.fellows
+                if not fellow.allocated_living_space and
+                fellow.wants_accommodation]
 
     def get_fellows_with_living_space_only(self):
         """
