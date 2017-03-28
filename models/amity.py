@@ -1,6 +1,7 @@
 import re
 import sqlite3
 import random
+from cmath import sqrt
 
 from pathlib import Path
 
@@ -48,11 +49,11 @@ class Amity(object):
                         new_office = Office(room_name)
                         self.offices.append(new_office)
                         new_rooms.append(new_office)
-                except TypeError as e:
-                    raise e
-                except Exception as e:
-                    self.print_info(e)
-                    raise e
+                except TypeError as error:
+                    raise error
+                except Exception as error:
+                    self.print_info(error)
+                    raise error
             else:
                 return Config.error_codes[3] + " '%s'" % room_name
         return new_rooms
@@ -101,8 +102,6 @@ class Amity(object):
             return new_person
 
         except TypeError as error:
-            raise error
-        except Exception as error:
             self.print_info(error)
             raise error
 
@@ -124,51 +123,65 @@ class Amity(object):
                 if isinstance(person, Staff) and isinstance(room, LivingSpace):
                     return Config.error_codes[10]
 
-                already_allocated_office = isinstance(
-                    room, Office) and isinstance(
-                    person.allocated_office_space, Office)
-                already_allocated_living_space = isinstance(
-                    room, LivingSpace) and isinstance(
-                    person.allocated_living_space, LivingSpace)
-
                 if not override:
-                    reallocate = True
-                    if already_allocated_office:
-                        if person.allocated_office_space == room:
-                            self.print_error(
-                                "'%s %s' already allocated office '%s'" %
-                                (person.first_name, person.last_name,
-                                 room.name))
-                            return False
-                        # Person already has office space
-                        self.print_info("About to move %s from %s to %s" % (
-                            person.first_name,
-                            person.allocated_office_space.name, room.name))
-                        reallocate = self.handle_yes_no_input(
-                            "Move? (Y/N): ", "Aborting Reallocation")
-                    elif already_allocated_living_space:
-                        if person.allocated_living_space == room:
-                            self.print_error("Person already allocated "
-                                             "living space '%s'" % room.name)
-                            return
-                        # Person already has office space
-                        self.print_info("About to move %s from %s to %s" % (
-                            person.first_name,
-                            person.allocated_living_space.name, room.name))
-                        reallocate = self.handle_yes_no_input(
-                            "Move? (Y/N): ", "Aborted Reallocation")
-                    if not reallocate:
-                        return  # Abort Mission
+                    if not self.handle_override_room_allocation(person, room):
+                        return
 
                 if isinstance(room, Office):
+                    print("Allocated office space")
                     person.allocated_office_space = room
                 elif isinstance(room, LivingSpace):
+                    print("Allocated living space")
                     person.allocated_living_space = room
             else:
                 return Config.error_codes[11]
             return person
-        except AttributeError as e:
-            raise e
+        except AttributeError as error:
+            raise error
+
+    def handle_override_room_allocation(self, person, room):
+        """
+
+        :param person:
+        :type person:
+        :param room:
+        :type room:
+        :return:
+        :rtype:
+        """
+        already_allocated_office = isinstance(room, Office) \
+            and isinstance(person.allocated_office_space, Office)
+        already_allocated_living_space = isinstance(room, LivingSpace)\
+            and isinstance(person.allocated_living_space, LivingSpace)
+        reallocate = True
+        if already_allocated_office:
+            if person.allocated_office_space == room:
+                self.print_error(
+                    "'%s %s' already allocated office '%s'" %
+                    (person.first_name, person.last_name,
+                     room.name))
+                return False
+            # Person already has office space
+            self.print_info("About to move %s from %s to %s" % (
+                person.first_name,
+                person.allocated_office_space.name, room.name))
+            reallocate = self.handle_yes_no_input(
+                "Move? (Y/N): ", "Aborting Reallocation")
+        elif already_allocated_living_space:
+            if person.allocated_living_space == room:
+                self.print_error("Person already allocated "
+                                 "living space '%s'" % room.name)
+                return False
+            # Person already has office space
+            self.print_info("About to move %s from %s to %s" % (
+                person.first_name,
+                person.allocated_living_space.name, room.name))
+            reallocate = self.handle_yes_no_input(
+                "Move? (Y/N): ", "Aborted Reallocation")
+        if not reallocate:
+            return False  # Abort Mission
+        else:
+            return True
 
     def randomly_allocate_room(self, person, room_type):
         """
@@ -845,8 +858,8 @@ class Amity(object):
             )
             if issubclass(type(room), Room):
                 allocated_fellows.append(fellow)
-        return {'staff': allocated_staff,
-                'fellows': allocated_fellows}
+        return {'staff': set(allocated_staff),
+                'fellows': set(allocated_fellows)}
 
     def get_room_object_from_name(self, name):
         """

@@ -1,9 +1,11 @@
 import random
+from abc import ABCMeta, abstractmethod
 
 from .room import Office, LivingSpace
 
 
-class Person(object):
+class Person(metaclass=ABCMeta):
+    @abstractmethod
     def __init__(self, first_name, last_name, **kwargs):
         # If not defined, id is None
         self.person_id = kwargs.pop('person_id', random.randrange(0, 99999))
@@ -11,12 +13,6 @@ class Person(object):
         self.allocated_office_space = None
         self.first_name = first_name
         self.last_name = last_name
-
-    # Override the __new__() method
-    def __new__(cls, *args, **kwargs):
-        if cls is Person:
-            raise TypeError("The Person class may not be instantiated")
-        return super(Person, cls).__new__(cls)
 
     @property
     def person_id(self):

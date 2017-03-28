@@ -154,9 +154,9 @@ def print_loaded_people(people_dict):
     if people_dict['loaded_fellows'] \
             or people_dict['loaded_staff']:
         people = amity.translate_staff_data_to_dict(
-                people_dict['loaded_staff'])\
-                + amity.translate_fellow_data_to_dict(
-                people_dict['loaded_fellows'])
+            people_dict['loaded_staff'])\
+            + amity.translate_fellow_data_to_dict(
+            people_dict['loaded_fellows'])
         print_subtitle("Loaded People")
         pretty_print_data(people)
     else:
@@ -165,9 +165,8 @@ def print_loaded_people(people_dict):
     if people_dict['modified_fellows'] \
             or people_dict['modified_staff']:
         modified_people = amity.translate_fellow_data_to_dict(
-                people_dict['modified_fellows']) + \
-                          amity.translate_staff_data_to_dict(
-                                  people_dict['modified_staff'])
+            people_dict['modified_fellows']) + \
+            amity.translate_staff_data_to_dict(people_dict['modified_staff'])
         print_subtitle("Modified People")
         pretty_print_data(modified_people)
 
@@ -180,8 +179,8 @@ def print_loaded_rooms(rooms_dict):
     """
     if rooms_dict['loaded_offices'] or rooms_dict['loaded_living_spaces']:
         rooms = amity.translate_room_data_to_dict(
-                rooms_dict['loaded_offices'],
-                rooms_dict['loaded_living_spaces'])
+            rooms_dict['loaded_offices'],
+            rooms_dict['loaded_living_spaces'])
         print_subtitle("Loaded Rooms")
         pretty_print_data(rooms)
     else:
@@ -203,12 +202,13 @@ def pretty_print_data(list_of_dicts):
             for key in dict_item.keys():
                 if key not in headers:
                     headers.append(key)
-            table_rows.append(color_list([dict_item[key] if key in dict_item
-                              else not_applicable for key in headers] +
-                              ((max_len - len(headers)) * [not_applicable]),
-                                'blue'))
-        table_rows.insert(0,  color_list(format_dict_keys(headers), 'blue',
-                                         attrs=['dark']))
+            table_rows.append(
+                color_list([dict_item[key] if key in dict_item else
+                            not_applicable for key in headers] +
+                           ((max_len - len(headers)) * [not_applicable]),
+                           'blue'))
+        table_rows.insert(0, color_list(format_dict_keys(headers), 'blue',
+                                        attrs=['dark']))
 
     else:
         table_rows = [[colored("No data to print", 'magenta')]]
@@ -360,7 +360,7 @@ class AmityInteractive(cmd.Cmd):
                     person, room, True)
             else:
                 reallocation = amity.allocate_room_to_person(
-                        person, room)
+                    person, room)
             if not reallocation:
                 return
             if not isinstance(reallocation, str):
