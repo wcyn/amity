@@ -27,7 +27,7 @@ class Database(object):
         :param cursor:
         :type cursor:
         """
-        cursor.execute('''
+        result = cursor.execute('''
                         CREATE TABLE IF NOT EXISTS people
                         (id INTEGER PRIMARY KEY,
                         first_name varchar(50) NOT NULL,
@@ -37,6 +37,7 @@ class Database(object):
                         allocated_living_space varchar(50),
                         wants_accommodation INTEGER DEFAULT 0)
                       ''')
+        print("Result: ", result)
         return
 
     @staticmethod
@@ -49,8 +50,8 @@ class Database(object):
         :type room_data:
         """
         cursor.executemany(
-                "INSERT OR REPLACE INTO rooms (name, "
-                "type) values (?, ?)", room_data)
+            "INSERT OR REPLACE INTO rooms (name, "
+            "type) values (?, ?)", room_data)
 
     @staticmethod
     def insert_people_data(cursor, people_data):
@@ -77,8 +78,8 @@ class Database(object):
         """
         # Check if database is empty
         cursor.execute(
-                "SELECT name FROM sqlite_master WHERE type='table' "
-                "AND name='people';")
+            "SELECT name FROM sqlite_master WHERE type='table' "
+            "AND name='people';")
         data = cursor.fetchall()
         cursor.execute("SELECT name FROM sqlite_master WHERE "
                        "type='table' AND name='rooms';")

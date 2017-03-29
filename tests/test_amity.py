@@ -10,6 +10,7 @@ from termcolor import cprint, colored
 
 from models.amity import Amity
 from models.config import Config
+from models.database import Database
 from models.person import Fellow, Staff
 from models.room import LivingSpace, Office
 
@@ -873,7 +874,7 @@ class TestAmity(unittest.TestCase):
 
     @patch('models.amity.Amity.handle_yes_no_input', return_value=True)
     def test_save_state_sqlite3_connect_success(self, input):
-        database_name = "*amity_empty"
+        database_name = "amity_t.db"
         sqlite3.connect = MagicMock(return_value='connection succeeded')
         result = self.amity.save_state(database_name, "databases")
         print("result;", result)
@@ -982,6 +983,7 @@ class TestAmity(unittest.TestCase):
 
     # Add Room Database Data to Amity Tests
     # ****************************************
+
     def test_add_room_db_data_returns_dictionary_of_lists(self):
         rooms = [('Hogwarts', 'office'),
                  ('Camelot', 'office'),
@@ -1031,6 +1033,152 @@ class TestAmity(unittest.TestCase):
             self.amity.add_room_database_data_to_amity(rooms)
             self.assertIn(text, fakeOutput.getvalue().strip())
             self.assertIn(text2, fakeOutput.getvalue().strip())
+
+    # Randomly Allocate Unallocated Tests
+    # ****************************************
+
+    def test_allocate_unallocated_returns_dict_of_staff_and_fellow_sets(self):
+        result = self.amity.randomly_allocate_unallocated()
+        self.assertIsInstance(result['staff'], set)
+        self.assertIsInstance(result['staff'].pop(), Staff)
+        self.assertIsInstance(result['fellows'], set)
+        self.assertIsInstance(result['fellows'].pop(), Fellow)
+
+    def test_allocate_unallocated_allocates_office_to_unallocated_people(self):
+        self.amity.randomly_allocate_unallocated()
+        self.assertIsInstance(self.staff.allocated_office_space, Office)
+        self.assertIsInstance(self.fellow.allocated_office_space, Office)
+
+    def test_allocate_unallocated_ignores_living_space_for_uninterested_fellow(
+            self):
+        self.amity.randomly_allocate_unallocated()
+        self.assertIsNone(self.fellow.allocated_living_space)
+
+    def test_allocate_unallocated_allocates_living_space_to_interested_fellow(
+            self):
+        self.fellow.wants_accommodation = True
+        result = self.amity.randomly_allocate_unallocated()
+        self.assertIsInstance(self.fellow.allocated_living_space, LivingSpace)
+        self.assertEqual(self.fellow.allocated_living_space.name,
+                         self.living_space.name)
+
+    # Get Room Object From Name Tests
+    # ****************************************
+
+    def test_get_room_object_from_name_returns_error_if_room_name_not_string(
+            self):
+        result = self.amity.get_room_object_from_name(42)
+        self.assertEqual(result, "Room name must be a string")
+
+    # Get Person Object From ID Tests
+    # ****************************************
+
+    def test_get_person_object_from_id_returns_error_if_person_id_not_int(
+            self):
+        result = self.amity.get_person_object_from_id('42.0')
+        self.assertEqual(result, "The person id must be an integer")
+
+    def test_get_person_object_from_id_returns_error_if_person_not_exists(
+            self):
+        result = self.amity.get_person_object_from_id(42)
+        self.assertEqual(result, "Person with the ID '%s' does not exist" % 42)
+
+    # Tupelize Room Data Tests
+    # ****************************************
+
+    def test_tuplize_room_data_returns_tuple_list_with_correct_data(
+            self):
+        result = self.amity.tuplize_room_data(self.amity.offices)
+        self.assertIsInstance(result[0], tuple)
+        self.assertEqual((self.office.name, "office"), result[0])
+
+    # Tupelize Fellow Data Tests
+    # ****************************************
+
+    def test_tuplize_fellow_data_returns_tuple_list_with_correct_data(
+            self):
+        result = self.amity.tuplize_fellow_data(self.amity.fellows)
+        self.assertIsInstance(result[0], tuple)
+        self.assertEqual((self.fellow.person_id, self.fellow.first_name,
+                          self.fellow.last_name, "fellow", None, None, False),
+                         result[0])
+
+    # Tuplize Staff Data Tests
+    # ****************************************
+
+    def test_tuplize_staff_data_returns_tuple_list_with_correct_data(
+            self):
+        result = self.amity.tuplize_staff_data(self.amity.staff)
+        self.assertIsInstance(result[0], tuple)
+        self.assertEqual((self.staff.person_id, self.staff.first_name,
+                          self.staff.last_name, "staff", None, None, False),
+                         result[0])
+
+    # Translate Fellow Data To Dict Tests
+    # ****************************************
+
+    def test_translate_fellow_data_returns_dict_list_with_correct_data(
+            self):
+        result = self.amity.translate_fellow_data_to_dict(self.amity.fellows)
+        self.assertIsInstance(result[0], dict)
+        fellow_dict = {}
+        fellow_dict.update(self.fellow.__dict__)
+        fellow_dict.update({'role': "fellow"})
+        self.assertEqual(fellow_dict, result[0])
+
+    # Translate Staff Data To Dict Tests
+    # ****************************************
+
+    def test_translate_staff_data_returns_dict_list_with_correct_data(
+            self):
+        result = self.amity.translate_staff_data_to_dict(self.amity.staff)
+        self.assertIsInstance(result[0], dict)
+        staff_dict = {}
+        staff_dict.update(self.staff.__dict__)
+        staff_dict.update({'role': "staff"})
+        self.assertEqual(staff_dict, result[0])
+
+    # Translate Room Data To Dict Tests
+    # ****************************************
+
+    def test_translate_room_data_returns_dict_list_with_correct_data(
+            self):
+        result = self.amity.translate_room_data_to_dict(
+            self.amity.offices, self.amity.living_spaces)
+        self.assertIsInstance(result[0], dict)
+        office_dict = {}
+        office_dict.update(self.office.__dict__)
+        office_dict.update({'type': "office"})
+        living_space_dict = {}
+        living_space_dict.update(self.living_space.__dict__)
+        living_space_dict.update({'type': "living-space"})
+        self.assertEqual([office_dict] + [living_space_dict], result)
+
+    # Handle Yes Not Input Tests
+    # ****************************************
+
+    @patch('models.amity.Amity.handle_yes_no_input', return_value=True)
+    def test_handle_yes_no_input_returns_true_if_yes_chosen(self, input):
+        result = self.amity.handle_yes_no_input("Yes/No?", "Aborted Mission!")
+        self.assertTrue(result)
+
+    @patch('models.amity.Amity.handle_yes_no_input', return_value=False)
+    def test_handle_yes_no_input_returns_false_if_no_chosen(self, input):
+        result = self.amity.handle_yes_no_input("Yes/No?", "Aborted Mission!")
+        self.assertFalse(result)
+
+    # Handle Yes No Input Tests
+    # ****************************************
+
+    @patch('models.amity.Amity.handle_yes_no_input', return_value=True)
+    def test_handle_yes_no_input_returns_true_if_yes_chosen(self, input):
+        result = self.amity.handle_yes_no_input("Yes/No?", "Aborted Mission!")
+        self.assertTrue(result)
+
+    @patch('models.amity.Amity.handle_yes_no_input', return_value=False)
+    def test_handle_yes_no_input_returns_false_if_no_chosen(self, input):
+        result = self.amity.handle_yes_no_input("Yes/No?", "Aborted Mission!")
+        self.assertFalse(result)
 
 
 if __name__ == '__main__':

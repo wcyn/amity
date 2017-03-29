@@ -383,7 +383,6 @@ class AmityInteractive(cmd.Cmd):
         """
         path = '/'.join(args['<filename>'].split('/')[:-1])
         filename = args['<filename>'].split('/')[-1]
-        amity.print_allocations(filename, path)
         loaded_people = amity.load_people(filename, path)
         if isinstance(loaded_people, str):
             print_error(loaded_people)

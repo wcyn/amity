@@ -44,6 +44,3 @@ class LivingSpace(Room):
 
     def __init__(self, name):
         super(LivingSpace, self).__init__(name)
-
-# Room.register(Office)
-# Room.register(LivingSpace)

@@ -3,8 +3,6 @@ import re
 import sqlite3
 import random
 
-from pathlib import Path
-
 from termcolor import cprint, colored
 
 from models.config import Config
@@ -14,6 +12,11 @@ from models.person import Staff, Fellow
 
 
 class Amity(object):
+    """
+    Amity Class: A Class to manage the room allocation for staff and fellows
+    Holds the data to be used in the application and the methods to act
+    upon these data items
+    """
     offices = []  # List of Office objects
     living_spaces = []  # List of LivingSpace objects
     fellows = []  # List of Fellow objects
@@ -21,12 +24,13 @@ class Amity(object):
 
     def create_room(self, room_names, room_type='office'):
         """
-        :param room_names:
-        :type room_names:
-        :param room_type:
-        :type room_type:
-        :return:
-        :rtype:
+        Creates a new room in Amity
+        :param room_names: The name of the new room
+        :type room_names: A list of strings
+        :param room_type: The type of the new room
+        :type room_type: A string
+        :return: The newly created room
+        :rtype: Room Object
         """
         new_rooms = []
         if not isinstance(room_names, list):
@@ -58,17 +62,18 @@ class Amity(object):
     def add_person(self, first_name, last_name, role,
                    wants_accommodation=False):
         """
-
-        :param first_name:
-        :type first_name:
-        :param last_name:
-        :type last_name:
-        :param role:
-        :type role:
-        :param wants_accommodation:
-        :type wants_accommodation:
-        :return:
-        :rtype:
+        Create a new person object and randomly assigns a room to them
+        :param first_name: First name of the new person
+        :type first_name: string
+        :param last_name: Last Name of the new person
+        :type last_name: string
+        :param role: Role of the new person (fellow or staff)
+        :type role: string
+        :param wants_accommodation: If the new person wants accommodation or
+                not
+        :type wants_accommodation: Boolean
+        :return: New Person
+        :rtype: Person Subclass instance
         """
         if not isinstance(wants_accommodation, bool):
             return Config.error_codes[7] + " '%s'" % wants_accommodation
@@ -104,15 +109,15 @@ class Amity(object):
 
     def allocate_room_to_person(self, person, room, override=False):
         """
-
-        :param override:
-        :type override:
-        :param person:
-        :type person:
-        :param room:
-        :type room:
-        :return:
-        :rtype:
+        Allocates a room to a fellow or staff
+        :param override: Force allocation if person already allocated
+        :type override: Boolean
+        :param person: Person to be allocated
+        :type person: Fellow or Staff object
+        :param room: Room to allocate to person
+        :type room: Office or LivingSpace object
+        :return: The person allocated
+        :rtype: Fellow or Staff object
         """
         try:
             if room.get_max_occupants() - room.num_of_occupants:
@@ -138,13 +143,13 @@ class Amity(object):
 
     def handle_override_room_allocation(self, person, room):
         """
-
-        :param person:
-        :type person:
-        :param room:
-        :type room:
-        :return:
-        :rtype:
+        Handle the overriding of an already allocated room
+        :param person: Person to be allocated a room
+        :type person: Fellow or Staff object
+        :param room: Room to be allocated to person
+        :type room: Office or LivingSpace object
+        :return: True if person reallocated, else, false
+        :rtype: Boolean
         """
         already_allocated_office = isinstance(room, Office) \
             and isinstance(person.allocated_office_space, Office)
@@ -185,13 +190,13 @@ class Amity(object):
 
     def randomly_allocate_room(self, person, room_type):
         """
-
-        :param person:
-        :type person:
-        :param room_type:
-        :type room_type:
-        :return:
-        :rtype:
+        Randomly allocates a room to a person
+        :param person: Person to be allocated room
+        :type person: Fellow or Staff object
+        :param room_type: Type of room to allocate
+        :type room_type: string
+        :return: The new room
+        :rtype: Office or LivingSpace object
         """
         if room_type not in Config.allowed_living_space_strings + \
                 Config.allowed_office_strings:
@@ -1097,7 +1102,6 @@ class Amity(object):
             staff_dict = {}
             for key, value in staff.__dict__.items():
                 if issubclass(type(value), Room):
-
                     value = value.name
                 staff_dict[key] = value
             staff_dict['role'] = "staff"
@@ -1115,13 +1119,21 @@ class Amity(object):
         :return:
         :rtype:
         """
-        office_dict_list = [office.__dict__ for office in office_list]
-        living_space_dict_list = [living_space.__dict__ for living_space
-                                  in living_space_list]
-        for office in office_dict_list:
-            office['type'] = "office"
-        for living_space in living_space_dict_list:
-            living_space['type'] = "living-space"
+        office_dict_list = []
+        living_space_dict_list = []
+        for office in office_list:
+            office_dict = {}
+            for key, value in office.__dict__.items():
+                office_dict[key] = value
+            office_dict['type'] = "office"
+            office_dict_list.append(office_dict)
+
+        for living_space in living_space_list:
+            living_space_dict = {}
+            for key, value in living_space.__dict__.items():
+                living_space_dict[key] = value
+            living_space_dict['type'] = "living-space"
+            living_space_dict_list.append(living_space_dict)
 
         return office_dict_list + living_space_dict_list
 
