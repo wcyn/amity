@@ -1,20 +1,20 @@
-class Room(object):
+from abc import ABCMeta, abstractmethod
+
+
+class Room(metaclass=ABCMeta):
+
+    @abstractmethod
     def __init__(self, name):
         self.name = name
         self.num_of_occupants = 0
 
-    def __new__(cls, *args, **kwargs):
-        if cls is Room:
-            raise TypeError("The Room class may not be instantiated")
-        return super(Room, cls).__new__(cls)
-        
     @property
     def name(self):
         return self.__name
 
     @name.setter
     def name(self, name):
-        if name.islower() or name.istitle():
+        if name.islower() or not name.isupper():
             self.__name = ''.join(name.split()).title()
         else:
             self.__name = ''.join(name.split())
@@ -30,9 +30,17 @@ class Room(object):
     def get_max_occupants(self):
         return self.max_occupants
 
+
 class Office(Room):
+
     max_occupants = 6
 
-class LivingSpace(Room):
-    max_occupants = 4   
+    def __init__(self, name):
+        super(Office, self).__init__(name)
 
+
+class LivingSpace(Room):
+    max_occupants = 4
+
+    def __init__(self, name):
+        super(LivingSpace, self).__init__(name)
