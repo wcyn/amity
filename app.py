@@ -381,7 +381,10 @@ class AmityInteractive(cmd.Cmd):
         Adds people to rooms from a txt file.
         Usage: load_people <filename>
         """
-        loaded_people = amity.load_people(args['<filename>'])
+        path = '/'.join(args['<filename>'].split('/')[:-1])
+        filename = args['<filename>'].split('/')[-1]
+        amity.print_allocations(filename, path)
+        loaded_people = amity.load_people(filename, path)
         if isinstance(loaded_people, str):
             print_error(loaded_people)
         else:
@@ -403,7 +406,7 @@ class AmityInteractive(cmd.Cmd):
         Usage: print_allocations [--o=FILENAME]
         """
         if args['--o']:
-            path = ' '.join(args['--o'].split('/')[:-1])
+            path = '/'.join(args['--o'].split('/')[:-1])
             filename = args['--o'].split('/')[-1]
             result = amity.print_allocations(filename, path)
         else:
@@ -419,7 +422,7 @@ class AmityInteractive(cmd.Cmd):
         """
         print_subtitle("Unallocated")
         if args['--o']:
-            path = ' '.join(args['--o'].split('/')[:-1])
+            path = '/'.join(args['--o'].split('/')[:-1])
             filename = args['--o'].split('/')[-1]
             result = amity.print_unallocated(filename, path)
         else:
@@ -446,7 +449,7 @@ class AmityInteractive(cmd.Cmd):
         Usage: save_state [--db=sqlite_database]
         """
         if args['--db']:
-            path = ' '.join(args['--db'].split('/')[:-1])
+            path = '/'.join(args['--db'].split('/')[:-1])
             database_name = args['--db'].split('/')[-1]
             result = amity.save_state(database_name, path)
         else:
@@ -462,7 +465,7 @@ class AmityInteractive(cmd.Cmd):
         Usage: load_state [<sqlite_database>]
         """
         if args['<sqlite_database>']:
-            path = ' '.join(args['<sqlite_database>'].split('/')[:-1])
+            path = '/'.join(args['<sqlite_database>'].split('/')[:-1])
             database_name = args['<sqlite_database>'].split('/')[-1]
             result = amity.load_state(database_name, path)
         else:

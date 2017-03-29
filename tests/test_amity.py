@@ -556,10 +556,6 @@ class TestAmity(unittest.TestCase):
             self.amity.print_allocations(42)
             self.amity.print_allocations(["hello"])
 
-    def test_print_allocations_gives_message_when_no_data_to_print(self):
-        result = self.amity.print_allocations("test_allocations.txt")
-        self.assertEqual(result, "No allocations to print")
-
     def test_print_allocations_ignores_invalid_characters_in_filename(
             self):
         self.fellow.allocated_office_space = self.office
@@ -841,22 +837,30 @@ class TestAmity(unittest.TestCase):
         with self.assertRaises(TypeError):
             self.amity.save_state(["hello"])
 
-    # def test_save_state_gives_asks_for_override_when_database_already_exists(
-    #         self):
-    #     database_name = "test_database_override"
-    #     # Create temporary database
-    #     db_file = Config.database_directory + database_name
-    #     res = sqlite3.connect(db_file)
-    #     print("\n\n %%%% res: ", res)
-    #     sqlite3.connect = MagicMock(
-    #         return_value="About to override database '%s'" % database_name)
-    #     result = self.amity.save_state(database_name)
-    #     self.assertEqual(result,
-    #                      "About to override database" + " '%s'" %
-    #                      database_name)
-    #     db_path = Path(db_file)
-    #     if db_path.is_file():
-    #         os.remove(Config.database_directory + database_name)
+    @patch('models.amity.Amity.handle_yes_no_input', return_value=False)
+    def test_save_state_gives_asks_for_override_when_database_already_exists(
+            self, input):
+        database_name = "test_database_override"
+        # Create temporary database
+        db_file = "databases/" + database_name
+        res = sqlite3.connect(db_file)
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            self.amity.save_state(database_name, "databases")
+            text = "About to override database '%s'" % database_name
+            self.assertIn(text, fakeOutput.getvalue().strip())
+        db_path = Path(db_file)
+        if db_path.is_file():
+            os.remove("databases/" + database_name)
+
+    def test_save_state_gives_informative_message_when_database_does_not_exist(
+            self):
+        database_name = "test_save_state_not_exist"
+        sqlite3.connect = MagicMock(
+            return_value=Config.error_codes[18] + " '%s'" % database_name)
+        result = self.amity.save_state(database_name)
+        self.assertEqual(result,
+                         Config.error_codes[18] + " '%s'" %
+                         database_name)
 
     def test_save_state_gives_informative_message_when_no_data_to_save(self):
         self.amity.offices = []
@@ -869,13 +873,13 @@ class TestAmity(unittest.TestCase):
         result = self.amity.save_state("test_database_no_data")
         self.assertEqual(result, "No data to save")
 
-    def test_save_state_sqlite3_connect_success(self):
-        database_name = "test_database_success"
+    @patch('models.amity.Amity.handle_yes_no_input', return_value=True)
+    def test_save_state_sqlite3_connect_success(self, input):
+        database_name = "*amity_empty"
         sqlite3.connect = MagicMock(return_value='connection succeeded')
-        result = self.amity.save_state(database_name)
-
-        sqlite3.connect.assert_called_with(
-            Config.database_directory + database_name)
+        result = self.amity.save_state(database_name, "databases")
+        print("result;", result)
+        sqlite3.connect.assert_called_with("databases/" + database_name)
         self.assertEqual(result, 'connection succeeded')
 
     def test_save_state_sqlite3_connect_fail_on_invalid_characters(self):
@@ -906,8 +910,8 @@ class TestAmity(unittest.TestCase):
                          database_name)
         result = self.amity.load_state(database_name, "databases")
 
-        self.assertEqual(result,
-                         "No data to Load. Empty database '%s'" % database_name)
+        self.assertEqual(result, "No data to Load. Empty database '%s'" %
+                         database_name)
 
     def test_load_state_gives_informative_message_when_database_does_not_exist(
             self):

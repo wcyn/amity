@@ -1,7 +1,7 @@
+import os
 import re
 import sqlite3
 import random
-from cmath import sqrt
 
 from pathlib import Path
 
@@ -248,17 +248,21 @@ class Amity(object):
                                 (person.first_name, person.last_name))
         return room
 
-    def load_people(self, filename):
+    def load_people(self, filename, path=None):
         """
         :param filename:
         :type filename:
         :return:
         :rtype:
         """
+        if path:
+            file_path = path + "/" + filename
+        else:
+            file_path = filename
         try:
-            with open(filename) as f:
-                people = f.readlines()
-            if not len(" ".join([i.strip() for i in people])):
+            with open(file_path) as file_input:
+                people = file_input.readlines()
+            if not len(" ".join([person.strip() for person in people])):
                 return Config.error_codes[13] + " '%s'" % filename
 
             loaded_people = []
@@ -548,7 +552,8 @@ class Amity(object):
         try:
             if database_name:
                 if set('[~!@#$%^&*()+{}"/\\:;\']+$').intersection(
-                        database_name):
+                        database_name) and database_name not in \
+                        Config.special_databases:
                     return Config.error_codes[17] + " '%s'" % database_name
             else:
                 database_name = Config.default_db_name
@@ -556,21 +561,22 @@ class Amity(object):
             if path:
                 database_file_path = path + "/" + database_name
             else:
-                database_file_path = Config.database_directory + database_name
-            db_path = Path(database_file_path)
+                database_file_path = database_name
 
             if not self.offices + self.living_spaces + self.fellows \
                     + self.staff:
                 return "No data to save"
 
-            if db_path.is_file() and not override and database_name != \
-                    Config.default_db_name:
+            if os.path.isfile(database_file_path) and not override and \
+                    database_name != Config.default_db_name:
                 self.print_info(
                     "About to override database '%s'" % database_name)
                 override = self.handle_yes_no_input(
                     "Override? (Y/N): ", "Aborted save state")
                 if not override:
                     return
+            elif not os.path.isfile(database_file_path):
+                return Config.error_codes[18] + " '%s'" % database_name
 
             self.print_info("Database Path: %s" % database_file_path)
             connection = sqlite3.connect(database_file_path)
@@ -630,12 +636,10 @@ class Amity(object):
             if path:
                 database_file_path = path + "/" + database_name
             else:
-                database_file_path = Config.database_directory + database_name
+                database_file_path = database_name
             self.print_info("Database path: '%s'" % database_file_path)
 
-            db_path = Path(database_file_path)
-
-            if not db_path.is_file():
+            if not os.path.isfile(database_file_path):
                 return Config.error_codes[18] + " '%s'" % database_name
 
             connection = sqlite3.connect(database_file_path)

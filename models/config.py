@@ -7,8 +7,8 @@ class Config(object):
         Holds Configuration data for the amity application
     """
     out = sys.stdout
-    database_directory = '../databases/'
-    files_directory = '../files/'
+    database_directory = '../databases'
+    files_directory = '../files'
     default_db_name = '*amity_database'
     empty_database = "*amity_empty"
     special_databases = [default_db_name, empty_database]
