@@ -577,8 +577,6 @@ class Amity(object):
                     return
             elif not os.path.isfile(database_file_path):
                 return Config.error_codes[18] + " '%s'" % database_name
-            else:
-                print("Nothing")
 
             self.print_info("Database Path: %s" % database_file_path)
             connection = sqlite3.connect(database_file_path)
@@ -686,14 +684,12 @@ class Amity(object):
                     loaded_fellows.append(fellow['loaded_fellow'])
                 elif fellow['modified_fellow']:
                     modified_fellows.append(fellow['modified_fellow'])
-
             elif person_tuple[3].lower() in Config.allowed_staff_strings:
                 staff = self.add_staff_database_data_to_amity(person_tuple)
                 if staff['loaded_staff']:
                     loaded_staff.append(staff['loaded_staff'])
                 elif staff['modified_staff']:
                     modified_staff.append(staff['modified_staff'])
-
             else:
                 self.print_error("%s '%s'" % (Config.error_codes[5],
                                               person_tuple[3]))
@@ -716,7 +712,9 @@ class Amity(object):
         if fellow_tuple[0] in [fellow.person_id for fellow in self.fellows]:
             # get fellow with similar id and apply values
             fellow = self.get_person_object_from_id(fellow_tuple[0])
-            fellow_before = fellow
+            print("Before: ", fellow.__dict__)
+            fellow_before = {}
+            fellow_before.update(fellow.__dict__)
             fellow.first_name = fellow_tuple[1]
             fellow.last_name = fellow_tuple[2]
             fellow.allocated_office_space = \
@@ -724,8 +722,8 @@ class Amity(object):
             fellow.allocated_living_space = \
                 self.get_room_object_from_name(fellow_tuple[5])
             fellow.wants_accommodation = True if fellow_tuple[6] else False
-            if fellow_before != fellow:
-                modified_fellows = fellow
+            if fellow_before != fellow.__dict__:
+                modified_fellow = fellow
         elif fellow_tuple[0] in [staff.person_id for staff in self.staff]:
             self.print_info("A staff member with the ID '%s' already "
                             "exists. Not loading Fellow '%s' '%s"
@@ -762,16 +760,15 @@ class Amity(object):
         if staff_tuple[0] in [staff.person_id for staff in self.staff]:
             # get staff with similar id and apply values
             staff = self.get_person_object_from_id(staff_tuple[0])
-            staff_before = staff
+            staff_before = {}
+            staff_before.update(staff.__dict__)
             staff.person_id = staff_tuple[0]
             staff.first_name = staff_tuple[1]
             staff.last_name = staff_tuple[2]
             staff.allocated_office_space = \
                 self.get_room_object_from_name(staff_tuple[4])
-            if staff_before != staff:
+            if staff_before != staff.__dict__:
                 modified_staff = staff
-            else:
-                modified_staff = []
         elif staff_tuple[0] in [fellow.person_id for fellow in self.fellows]:
             self.print_info("A fellow with the ID '%s' already "
                             "exists. Not loading Staff '%s' '%s"
@@ -809,7 +806,7 @@ class Amity(object):
                                     % (room[0]))
                 elif room[0] in [living_space.name for living_space
                                  in self.living_spaces]:
-                    self.print_info("A Living Space with the name '%s' "
+                    self.print_info("A living space with the name '%s' "
                                     "already exists. Skipping loading of "
                                     "office with duplicate name..."
                                     % (room[0]))
@@ -826,9 +823,9 @@ class Amity(object):
                                     "duplicate living space..."
                                     % (room[0]))
                 elif room[0] in [office.name for office in self.offices]:
-                    self.print_info("A Living Space with the name '%s' "
+                    self.print_info("An office with the name '%s' "
                                     "already exists. Skipping loading of "
-                                    "office with duplicate name..."
+                                    "living space with duplicate name..."
                                     % (room[0]))
                 else:
                     # Create an entirely new Living Space

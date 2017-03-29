@@ -849,9 +849,6 @@ class TestAmity(unittest.TestCase):
             print("Result: ", r)
             text = "About to override database '%s'" % database_name
             self.assertIn(text, fakeOutput.getvalue().strip())
-        db_path = Path(db_file)
-        # if db_path.is_file():
-        #     os.remove(db_path)
 
     def test_save_state_gives_informative_message_when_database_does_not_exist(
             self):
@@ -932,6 +929,108 @@ class TestAmity(unittest.TestCase):
         result = self.amity.load_state('test_database*')
         self.assertEqual(result,
                          Config.error_codes[17] + " 'test_database*'")
+
+    # Add People Database Data to Amity Tests
+    # ****************************************
+
+    def test_add_people_db_data_returns_dictionary_of_lists(self):
+        people = [(3742, 'Maria', 'Najai', 'fellow', None, None, 0),
+                  (86819, 'SIMON', 'PATTERSON', 'fellow', 'Hogwarts', None, 0),
+                  (91102, 'LEIGH', 'RILEY', 'staff', 'Hogwarts', None, 0),
+                  (92432, 'OLUWAFEMI', 'SULE', 'fellow', 'Hogwarts', None, 0),
+                  (98427, 'DOMINIC', 'WALTERS', 'staff', 'Hogwarts', None, 0)]
+        result = self.amity.add_people_database_data_to_amity(people)
+        self.assertIsInstance(result, dict)
+        self.assertIsInstance(result["loaded_staff"], list)
+        self.assertIsInstance(result["modified_staff"], list)
+        self.assertIsInstance(result["loaded_fellows"], list)
+        self.assertIsInstance(result["modified_fellows"], list)
+
+    def test_add_people_db_data_returns_correct_data(self):
+        py = Office("py")
+        self.amity.offices.append(py)
+        people = [(3742, 'Maria', 'Najai', 'fellow', None, None, 0),
+                  (86819, 'SIMON', 'PATTERSON', 'fellow', 'Hogwarts', None, 0),
+                  (91102, 'LEIGH', 'RILEY', 'staff', 'Hogwarts', None, 0),
+                  (self.fellow.person_id, 'OLUWAFEMI', 'SULE', 'fellow', 'Py',
+                   None,
+                   0),
+                  (self.staff.person_id, 'DOMINIC', 'WALTERS', 'staff', 'Hogwarts',
+                   None, 0)]
+        result = self.amity.add_people_database_data_to_amity(people)
+
+        self.assertEqual(result["loaded_staff"][0].person_id, 91102)
+        self.assertIn((91102, "LEIGH", "RILEY"), [
+            (person.person_id, person.first_name, person.last_name) for
+            person in self.amity.get_all_people()])
+        self.assertEqual(result["modified_staff"][0], self.staff)
+        self.assertIn((self.fellow.person_id, "OLUWAFEMI", "SULE"), [
+            (person.person_id, person.first_name, person.last_name) for
+            person in self.amity.get_all_people()])
+        self.assertEqual(result["loaded_fellows"][0].person_id, 3742)
+        self.assertEqual(result["modified_fellows"][0], self.fellow)
+
+    def test_add_people_db_data_print_error_if_wrong_person_type(self):
+        people = [(3742, 'Maria', 'Najai', 'exec', None, None, 0)]
+
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            text = "%s '%s'" % (Config.error_codes[5], people[0][3])
+            text2 = "Skipping invalid data..."
+            result = self.amity.add_people_database_data_to_amity(people)
+            self.assertIn(text, fakeOutput.getvalue().strip())
+            self.assertIn(text2, fakeOutput.getvalue().strip())
+
+    # Add Room Database Data to Amity Tests
+    # ****************************************
+    def test_add_room_db_data_returns_dictionary_of_lists(self):
+        rooms = [('Hogwarts', 'office'),
+                 ('Camelot', 'office'),
+                 ('Ruby', 'living-space'),
+                 ('Python', 'living-space')]
+        result = self.amity.add_room_database_data_to_amity(rooms)
+
+        self.assertEqual(result["loaded_offices"][0].name, 'Camelot')
+        self.assertEqual(result["loaded_living_spaces"][0].name, 'Ruby')
+        self.assertNotIn('Hogwarts', [room.name for room in result[
+            "loaded_offices"]])
+        self.assertNotIn('Python', [room.name for room in result[
+            "loaded_living_spaces"]])
+
+    def test_add_room_db_data_ignores_existing_rooms(self):
+        rooms = [('Hogwarts', 'office'),
+                 ('Python', 'living-space')]
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            text = "An office with the name '%s' already exists. Skipping " \
+                   "loading of duplicate office..." % (rooms[0][0])
+            text2 = "A living space with the name '%s' already exists. " \
+                    "Skipping loading of duplicate living space..."\
+                    % (rooms[1][0])
+            self.amity.add_room_database_data_to_amity(rooms)
+            self.assertIn(text, fakeOutput.getvalue().strip())
+            self.assertIn(text2, fakeOutput.getvalue().strip())
+
+    def test_add_room_db_data_ignores_existing_rooms_of_different_types(self):
+        rooms = [('Hogwarts', 'living-space'),
+                 ('Python', 'office')]
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            text = "An office with the name '%s' already exists. " \
+                    "Skipping loading of living space with duplicate " \
+                    "name..." % (rooms[0][0])
+            text2 = "A living space with the name '%s' already exists. " \
+                    "Skipping loading of office with duplicate name..." % (
+                        rooms[1][0])
+            self.amity.add_room_database_data_to_amity(rooms)
+            self.assertIn(text, fakeOutput.getvalue().strip())
+            self.assertIn(text2, fakeOutput.getvalue().strip())
+
+    def test_add_room_db_data_prints_error_for_invalid_room_type(self):
+        rooms = [('Hogwarts', 'bungalow')]
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            text = "%s '%s'" % (Config.error_codes[6], rooms[0][1])
+            text2 = "Skipping invalid data..."
+            self.amity.add_room_database_data_to_amity(rooms)
+            self.assertIn(text, fakeOutput.getvalue().strip())
+            self.assertIn(text2, fakeOutput.getvalue().strip())
 
 
 if __name__ == '__main__':
