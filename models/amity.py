@@ -441,7 +441,6 @@ class Amity(object):
             raise TypeError
         rooms = self.get_all_rooms()
         room_name = room_name.lower()
-        people_count = 0
         if rooms:
             people = self.get_people_allocated_room(room_name)
             if isinstance(people, str):
@@ -499,14 +498,14 @@ class Amity(object):
             else:
                 if not isinstance(filename, str):
                     raise TypeError
-                if path:
-                    file_path = path + "/" + filename
-                else:
-                    file_path = filename
                 # Clean filename. Remove unwanted filename characters
                 filename = ''.join(x for x in filename if x not in "\/:*?<>|")
                 self.print_info("Printing Allocations to file '%s'..."
                                 % filename)
+                if path:
+                    file_path = path + "/" + filename
+                else:
+                    file_path = filename
                 # Empty the file first
                 open(file_path, 'w').close()
                 for room in self.get_all_rooms():
@@ -529,7 +528,8 @@ class Amity(object):
                             file_w.write("\n")
                     else:
                         self.print_info(people)
-                self.print_info("Printed to file successfully!")
+                self.print_info("Allocations saved to the file '%s'"
+                                % (file_path))
         except FileNotFoundError as error:
             self.print_error("%s" % error)
 
@@ -579,6 +579,7 @@ class Amity(object):
                 self.print_info("Creating rooms table...")
                 Database.create_rooms_table(cursor)
                 self.print_info("Creating people table...")
+                Database.create_people_table(cursor)
 
                 # Save data to database
                 if self.get_all_rooms():
