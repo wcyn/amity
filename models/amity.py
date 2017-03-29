@@ -36,8 +36,8 @@ class Amity(object):
 
         room_names = set(room_names)
         for room_name in room_names:
-            if not isinstance(room_name, str):
-                raise TypeError
+            # if not isinstance(room_name, str):
+            #     raise TypeError
             if room_name.lower() not in ([room.name.lower() for room in
                                           self.get_all_rooms()]):
                 try:
@@ -49,10 +49,7 @@ class Amity(object):
                         new_office = Office(room_name)
                         self.offices.append(new_office)
                         new_rooms.append(new_office)
-                except TypeError as error:
-                    raise error
-                except Exception as error:
-                    self.print_info(error)
+                except AttributeError as error:
                     raise error
             else:
                 return Config.error_codes[3] + " '%s'" % room_name
@@ -101,7 +98,7 @@ class Amity(object):
                         new_person.last_name))
             return new_person
 
-        except TypeError as error:
+        except AttributeError as error:
             self.print_info(error)
             raise error
 
@@ -155,6 +152,7 @@ class Amity(object):
             and isinstance(person.allocated_living_space, LivingSpace)
         reallocate = True
         if already_allocated_office:
+            print("Already allocated office")
             if person.allocated_office_space == room:
                 self.print_error(
                     "'%s %s' already allocated office '%s'" %
@@ -169,8 +167,10 @@ class Amity(object):
                 "Move? (Y/N): ", "Aborting Reallocation")
         elif already_allocated_living_space:
             if person.allocated_living_space == room:
-                self.print_error("Person already allocated "
-                                 "living space '%s'" % room.name)
+                self.print_error("'%s %s' already allocated "
+                                 "living space '%s'" %
+                                 (person.first_name, person.last_name,
+                                  room.name))
                 return False
             # Person already has office space
             self.print_info("About to move %s from %s to %s" % (
@@ -222,7 +222,7 @@ class Amity(object):
                 self.print_info_result("Allocated office: %s" % room.name)
             else:
                 self.print_info("All offices are full. No office to "
-                                "assign to '%s %s'" %
+                                "allocate to '%s %s'" %
                                 (person.first_name, person.last_name))
         else:
             if not self.living_spaces:
@@ -243,8 +243,9 @@ class Amity(object):
                 # have accommodation
                 person.wants_accommodation = False
             else:
-                self.print_info("No free living space to allocate '%s' to"
-                                % person.first_name)
+                self.print_info("All living spaces are full. No living space "
+                                "to allocate to '%s %s'" %
+                                (person.first_name, person.last_name))
         return room
 
     def load_people(self, filename):
@@ -511,21 +512,21 @@ class Amity(object):
                 for room in self.get_all_rooms():
                     people = self.print_room(room.name, False)
                     if not isinstance(people, str):
-                        with open(file_path, 'a') as f:
-                            f.write("%s\n%s\n" % (room.name, '-' * len(
-                                    room.name)))
+                        with open(file_path, 'a') as file_w:
+                            file_w.write("%s\n%s\n" % (room.name, '-' * len(
+                                room.name)))
                             for person in people:
                                 if isinstance(person, Staff):
-                                    f.write("%s %s %s\n" % (
+                                    file_w.write("%s %s %s\n" % (
                                         person.first_name,
                                         person.last_name,
                                         "Staff"))
                                 else:
-                                    f.write("%s %s %s\n" % (
+                                    file_w.write("%s %s %s\n" % (
                                         person.first_name,
                                         person.last_name,
                                         "Fellow"))
-                            f.write("\n")
+                            file_w.write("\n")
                     else:
                         self.print_info(people)
                 self.print_info("Printed to file successfully!")

@@ -6,6 +6,8 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
+from termcolor import cprint, colored
+
 from models.amity import Amity
 from models.config import Config
 from models.person import Fellow, Staff
@@ -48,8 +50,8 @@ class TestAmity(unittest.TestCase):
         self.assertEqual(self.amity.living_spaces, [self.living_space] + bee)
         self.assertEqual(self.amity.living_spaces[1].name, "Bee")
 
-    def test_create_room_raises_type_error_with_non_string_room_names(self):
-        with self.assertRaises(TypeError):
+    def test_create_room_attribute_error_with_non_string_room_names(self):
+        with self.assertRaises(AttributeError):
             rooms = [45, "gates", "room1"]
             self.amity.create_room(rooms)
 
@@ -147,6 +149,119 @@ class TestAmity(unittest.TestCase):
     def test_allocate_room_raises_attribute_error_for_non_room_object(self):
         with self.assertRaises(AttributeError):
             self.amity.allocate_room_to_person("office name", self.fellow)
+
+    def test_handle_override_returns_false_if_similar_office_allocated(self):
+        self.fellow.allocated_office_space = self.office
+        result = self.amity.handle_override_room_allocation(
+                self.fellow, self.office)
+        self.assertFalse(result)
+
+    def test_handle_override_prints_error_if_similar_office_allocated(
+            self):
+        self.fellow.allocated_office_space = self.office
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            self.amity.handle_override_room_allocation(
+                    self.fellow, self.office)
+            text = "'%s %s' already allocated office '%s'" % (
+                self.fellow.first_name, self.fellow.last_name,
+                self.office.name)
+            self.assertIn(text, fakeOutput.getvalue().strip())
+
+    def test_handle_override_returns_false_if_similar_living_space_allocated(
+            self):
+        self.fellow.allocated_living_space = self.living_space
+        result = self.amity.handle_override_room_allocation(
+                self.fellow, self.living_space)
+        self.assertFalse(result)
+
+    def test_handle_override_prints_error_if_similar_living_space_allocated(
+            self):
+        self.fellow.allocated_living_space = self.living_space
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            self.amity.handle_override_room_allocation(
+                    self.fellow, self.living_space)
+            text = "'%s %s' already allocated living space '%s'" % (
+                self.fellow.first_name, self.fellow.last_name,
+                self.living_space.name)
+            self.assertIn(text, fakeOutput.getvalue().strip())
+
+    @patch('models.amity.Amity.handle_yes_no_input', return_value=True)
+    def test_handle_override_asks_for_confirmation_if_person_has_office_space(
+            self, input):
+        office2 = Office("Tana")
+        self.staff.allocated_office_space = self.office
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            self.amity.handle_override_room_allocation(self.staff, office2)
+            text = "About to move %s from %s to %s" % (
+                self.staff.first_name, self.office.name, office2.name)
+            self.assertIn(text, fakeOutput.getvalue().strip())
+
+    @patch('models.amity.Amity.handle_yes_no_input', return_value=True)
+    def test_handle_override_asks_for_confirmation_if_person_has_living_space(
+            self, input):
+        living_space2 = LivingSpace("Ruby")
+        self.fellow.allocated_living_space = self.living_space
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            self.amity.handle_override_room_allocation(
+                self.fellow, living_space2)
+            text = "About to move %s from %s to %s" % (
+                self.fellow.first_name, self.living_space.name,
+                living_space2.name)
+            self.assertIn(text, fakeOutput.getvalue().strip())
+
+    @patch('models.amity.Amity.handle_yes_no_input', return_value=True)
+    def test_handle_override_returns_false_if_input_value_is_false(
+            self, input):
+        living_space2 = LivingSpace("Ruby")
+        self.fellow.allocated_living_space = self.living_space
+        result = self.amity.handle_override_room_allocation(
+            self.fellow, living_space2)
+        self.assertFalse(False)
+
+    def test_randomly_allocate_room_prints_message_if_no_office_exist(self):
+        self.amity.offices = []
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            self.amity.randomly_allocate_room(
+                self.fellow, Config.allowed_office_strings[0])
+            text = "There exists no offices to assign to '%s %s'" % (
+                self.fellow.first_name, self.fellow.last_name)
+            self.assertIn(text, fakeOutput.getvalue().strip())
+
+    def test_randomly_allocate_room_prints_message_if_offices_are_full(self):
+        self.office.num_of_occupants = self.office.max_occupants
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            self.amity.randomly_allocate_room(
+                self.fellow, Config.allowed_office_strings[0])
+            text = "All offices are full. No office to allocate to '%s %s'" \
+                   % (self.fellow.first_name, self.fellow.last_name)
+            self.assertIn(text, fakeOutput.getvalue().strip())
+
+    def test_randomly_allocate_room_returns_none_if_no_office_exist(self):
+        self.amity.offices = []
+        result = self.amity.randomly_allocate_room(
+            self.fellow, Config.allowed_office_strings[0])
+        self.assertEqual(result, None)
+
+    def test_randomly_allocate_room_prints_message_if_no_living_spaces_exist(
+            self):
+        self.amity.living_spaces = []
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            self.amity.randomly_allocate_room(
+                self.fellow, Config.allowed_living_space_strings[0])
+            text = "There exists no living spaces to assign to fellow '%s " \
+                   "%s'" % (self.fellow.first_name, self.fellow.last_name)
+            self.assertIn(text, fakeOutput.getvalue().strip())
+
+    def test_randomly_allocate_room_prints_message_if_living_spaces_are_full(
+            self):
+        self.living_space.num_of_occupants = self.living_space.max_occupants
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            self.amity.randomly_allocate_room(
+                self.fellow, Config.allowed_living_space_strings[0])
+            text = "All living spaces are full. No living space to " \
+                   "allocate to '%s %s'" \
+                   % (self.fellow.first_name, self.fellow.last_name)
+            self.assertIn(text, fakeOutput.getvalue().strip())
 
     def test_allocate_living_space_to_staff_gives_error_message(self):
         # Test that nothing is added to living spaces or offices
@@ -425,11 +540,6 @@ class TestAmity(unittest.TestCase):
         self.amity.allocate_room_to_person(self.fellow, self.living_space)
         self.amity.allocate_room_to_person(self.fellow, self.office)
         self.amity.allocate_room_to_person(self.staff, self.office)
-        # allocated = "Jane Surname Staff Hogwarts\n" \
-        #             "Jake Surname Fellow Hogwarts Python"
-        # with patch('sys.stdout', new=StringIO()) as fakeOutput:
-        #     self.amity.print_allocated_people()
-        #     self.assertEqual(fakeOutput.getvalue().strip(), allocated)
         result = self.amity.print_allocated_people()
         print("result allocs: ", result)
         self.assertEqual(result[0].allocated_office_space,
@@ -452,6 +562,21 @@ class TestAmity(unittest.TestCase):
         result = self.amity.print_unallocated("test_nairobi*.txt")
         self.assertEqual(result['filename'], filename)
         os.remove(filename)
+
+    def test_print_unallocated_returns_message_when_no_unallocated_people(
+            self):
+        self.fellow.allocated_office_space = self.office
+        self.staff.allocated_office_space = self.office
+        result = self.amity.print_unallocated()
+        self.assertEqual(result, "No unallocated people data to print")
+
+    def test_print_unallocated_prints_filenotfound_error_on_non_existent_dir(
+            self):
+        with patch('sys.stdout', new=StringIO()) as fakeOutput:
+            self.amity.print_unallocated('test.txt', '../fake_dir/')
+            text = "[Errno 2] No such file or directory: '%s'" \
+                   % ('../fake_dir/' + '/test.txt')
+            self.assertIn(text, fakeOutput.getvalue().strip())
 
     def test_print_unallocated_prints_only_unallocated_people_to_file(self):
         fellow = Fellow("Vader", "Surname")
