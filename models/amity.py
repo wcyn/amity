@@ -566,7 +566,7 @@ class Amity(object):
             if not self.offices + self.living_spaces + self.fellows \
                     + self.staff:
                 return "No data to save"
-
+            self.print_info("Database path: '%s'" % database_file_path)
             if os.path.isfile(database_file_path) and not override and \
                     database_name != Config.default_db_name:
                 self.print_info(
@@ -577,9 +577,12 @@ class Amity(object):
                     return
             elif not os.path.isfile(database_file_path):
                 return Config.error_codes[18] + " '%s'" % database_name
+            else:
+                print("Nothing")
 
             self.print_info("Database Path: %s" % database_file_path)
             connection = sqlite3.connect(database_file_path)
+
             if isinstance(connection, sqlite3.Connection):
                 cursor = connection.cursor()
                 self.print_info("Creating rooms table...")

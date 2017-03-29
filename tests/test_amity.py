@@ -840,17 +840,18 @@ class TestAmity(unittest.TestCase):
     @patch('models.amity.Amity.handle_yes_no_input', return_value=False)
     def test_save_state_gives_asks_for_override_when_database_already_exists(
             self, input):
-        database_name = "test_database_override"
-        # Create temporary database
-        db_file = "databases/" + database_name
-        res = sqlite3.connect(db_file)
+        database_name = Config.empty_database
+        path = "databases/"
+        db_file = path + database_name
+        # Use empty database
         with patch('sys.stdout', new=StringIO()) as fakeOutput:
-            self.amity.save_state(database_name, "databases")
+            r = self.amity.save_state(database_name, "databases")
+            print("Result: ", r)
             text = "About to override database '%s'" % database_name
             self.assertIn(text, fakeOutput.getvalue().strip())
         db_path = Path(db_file)
-        if db_path.is_file():
-            os.remove("databases/" + database_name)
+        # if db_path.is_file():
+        #     os.remove(db_path)
 
     def test_save_state_gives_informative_message_when_database_does_not_exist(
             self):
