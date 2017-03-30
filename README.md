@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/andela-wcyn/amity.svg?branch=develop)](https://travis-ci.org/andela-wcyn/amity) [![Coverage Status](https://coveralls.io/repos/github/andela-wcyn/amity/badge.svg)](https://coveralls.io/github/andela-wcyn/amity)
+[![Build Status](https://travis-ci.org/andela-wcyn/amity.svg?branch=develop)](https://travis-ci.org/andela-wcyn/amity) [![Coverage Status](https://coveralls.io/repos/github/andela-wcyn/amity/badge.svg?branch=develop)](https://coveralls.io/github/andela-wcyn/amity?branch=develop)
 # Amity
 
 A room Allocation system for Fellows and Staff.
